@@ -1,6 +1,6 @@
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
-import { createJSONStorage } from 'zustand/middleware'
+import { persist, createJSONStorage } from 'zustand/middleware'
+import { type StateCreator } from 'zustand'
 
 type TMDBItem = {
   id: number
@@ -61,13 +61,11 @@ type TMDBState = {
   enrichMetadata: (item: EnrichedItem) => Promise<EnrichedItem>
 }
 
-import { StateCreator } from 'zustand'
-
 const TMDB_BASE_URL = 'https://api.themoviedb.org/3'
 
 export const useTMDB = create<TMDBState>()(
-  persist(
-    ((set: any, get: any) => ({
+  persist<TMDBState, Pick<TMDBState, 'apiKey' | 'language' | 'includeAdult'>>(
+    (set, get) => ({
       apiKey: undefined,
       language: 'en-US',
       includeAdult: false,
@@ -172,22 +170,26 @@ export const useTMDB = create<TMDBState>()(
           )?.key || null
         }
       }
-    })) as StateCreator<TMDBState>,
+    }) as StateCreator<TMDBState, [], [], Pick<TMDBState, 'apiKey' | 'language' | 'includeAdult'>>,
     {
       name: 'crumble-tmdb',
       storage: createJSONStorage(() => localStorage),
-      partialize: (state) => ({
+      partialize: (state: TMDBState) => ({
         apiKey: state.apiKey,
         language: state.language,
         includeAdult: state.includeAdult
       }),
       version: 1,
       migrate: (persistedState: any, version: number) => {
+        const defaultState = {
+          apiKey: undefined,
+          language: 'en-US',
+          includeAdult: false
+        }
         if (version === 0) {
-          // Handle migration from version 0 to 1
           return {
-            ...persistedState,
-            // Add any necessary migrations here
+            ...defaultState,
+            ...persistedState
           }
         }
         return persistedState
