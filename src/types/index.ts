@@ -7,6 +7,7 @@ export interface AddonManifest {
   catalogs?: CatalogRequest[];
   resources: string[];
   types: string[];
+  baseUrl?: string; // Added to store the addon's base URL
   behaviorHints?: {
     adult?: boolean;
     p2p?: boolean;

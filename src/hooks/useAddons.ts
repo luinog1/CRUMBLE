@@ -28,18 +28,28 @@ export const useAddons = create<AddonState>()(
         try {
           set({ loading: true, error: null })
           
-          const response = await fetch(url)
-          if (!response.ok) throw new Error('Failed to fetch addon manifest')
+          // Normalize URL - remove trailing slash and add manifest.json if not present
+          const normalizedUrl = url.replace(/\/$/, '')
+          const manifestUrl = normalizedUrl.endsWith('/manifest.json') ? normalizedUrl : `${normalizedUrl}/manifest.json`
+          
+          const response = await fetch(manifestUrl)
+          if (!response.ok) throw new Error(`Failed to fetch addon manifest: ${response.status} ${response.statusText}`)
           
           const manifest = await response.json() as AddonManifest
           if (!manifest.id || !manifest.version || !manifest.resources) {
             throw new Error('Invalid addon manifest')
           }
 
+          // Store the base URL with the manifest for later use
+          const manifestWithBaseUrl = {
+            ...manifest,
+            baseUrl: normalizedUrl.replace('/manifest.json', '')
+          }
+
           const existingAddon = get().addons.find(a => a.id === manifest.id)
           if (!existingAddon) {
             set(state => ({
-              addons: [...state.addons, manifest],
+              addons: [...state.addons, manifestWithBaseUrl],
               catalogs: [...state.catalogs, ...(manifest.catalogs || [])]
             }))
           }
@@ -70,24 +80,42 @@ export const useAddons = create<AddonState>()(
         const addon = get().addons.find(a => a.catalogs?.find(c => c.id === catalogId))
         if (!addon) return []
 
-        const baseUrl = addon.resources[0]
-        if (!baseUrl) return []
+        // Check if addon supports catalog resource
+        if (!addon.resources.includes('catalog')) {
+          console.error('Addon does not support catalog resource')
+          return []
+        }
 
-        const queryParams = new URLSearchParams(filter)
-        const url = `${baseUrl}/catalog/${catalog.type}/${catalog.id}?${queryParams}`
+        // Get base URL from addon (stored when adding the addon)
+        const baseUrl = (addon as any).baseUrl
+        if (!baseUrl) {
+          console.error('Addon base URL not found')
+          return []
+        }
+
+        // Build URL according to Stremio protocol
+        let url = `${baseUrl}/catalog/${catalog.type}/${catalog.id}.json`
+        
+        if (filter && Object.keys(filter).length > 0) {
+          const queryParams = new URLSearchParams(filter)
+          url += `?${queryParams.toString()}`
+        }
 
         try {
           const response = await fetch(url)
-          if (!response.ok) throw new Error('Failed to fetch catalog items')
+          if (!response.ok) throw new Error(`Failed to fetch catalog items: ${response.status} ${response.statusText}`)
           
           const data = await response.json()
-          return data.map((item: { id: string; name?: string; title?: string; poster: string; type: string; year: number; rating: number }) => ({
+          // Handle Stremio protocol response format
+          const items = data.metas || data || []
+          
+          return items.map((item: { id: string; name?: string; title?: string; poster: string; type: string; year: number; imdbRating?: string }) => ({
             id: item.id,
             title: item.name || item.title || 'Unknown Title',
             poster: item.poster,
             type: item.type === 'movie' ? 'movie' : 'series',
             year: item.year,
-            rating: item.rating
+            rating: item.imdbRating ? parseFloat(item.imdbRating) : undefined
           })) as CatalogItem[]
         } catch (error) {
           console.error('Failed to fetch catalog items:', error)

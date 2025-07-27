@@ -78,6 +78,7 @@ const Settings = () => {
             <VStack spacing={4} align="stretch">
               <HStack>
                 <Input
+                  id="addon-url-input"
                   placeholder="Enter addon manifest URL"
                   value={newAddonUrl}
                   onChange={(e) => setNewAddonUrl(e.target.value)}
@@ -131,6 +132,7 @@ const Settings = () => {
                 <FormLabel>API Key</FormLabel>
                 <HStack>
                   <Input
+                    id="tmdb-api-key"
                     type="password"
                     placeholder="Enter TMDB API key"
                     value={tmdbKey}
@@ -145,6 +147,7 @@ const Settings = () => {
               <FormControl>
                 <FormLabel>Language</FormLabel>
                 <Select
+                  id="language-select"
                   onChange={(e) => setLanguage(e.target.value)}
                   defaultValue="en-US"
                 >
@@ -159,7 +162,7 @@ const Settings = () => {
 
               <FormControl display="flex" alignItems="center">
                 <FormLabel mb={0}>Include Adult Content</FormLabel>
-                <Switch onChange={(e) => setIncludeAdult(e.target.checked)} />
+                <Switch id="include-adult-switch" onChange={(e) => setIncludeAdult(e.target.checked)} />
               </FormControl>
             </VStack>
           </CardBody>
@@ -174,6 +177,7 @@ const Settings = () => {
               <FormControl>
                 <FormLabel>Default Player</FormLabel>
                 <Select
+                  id="default-player-select"
                   value={playerConfig.type as string}
                   onChange={(e) => setPlayerConfig({
                     ...playerConfig,
@@ -189,6 +193,7 @@ const Settings = () => {
               <FormControl>
                 <FormLabel>Default Quality</FormLabel>
                 <Select
+                  id="default-quality-select"
                   value={playerConfig.options?.quality?.default ?? 'auto'}
                   onChange={(e) => setPlayerConfig({
                     ...playerConfig,
@@ -211,6 +216,7 @@ const Settings = () => {
               <FormControl display="flex" alignItems="center">
                 <FormLabel mb={0}>Enable HDR</FormLabel>
                 <Switch
+                  id="enable-hdr-switch"
                   isChecked={false}
                   onChange={() => {}}
                 />
@@ -221,6 +227,7 @@ const Settings = () => {
               <FormControl>
                 <FormLabel>External Player</FormLabel>
                 <Select
+                  id="external-player-select"
                   defaultValue="vlc"
                   onChange={(e) => localStorage.setItem('externalPlayer', e.target.value)}
                 >

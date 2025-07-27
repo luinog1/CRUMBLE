@@ -94,6 +94,7 @@ const Search = () => {
             <FiSearch />
           </InputLeftElement>
           <Input
+            id="search-input"
             placeholder="Search movies, TV shows, and more..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
