@@ -13,6 +13,8 @@ import {
   MenuButton,
   MenuList,
   MenuItem,
+  Tooltip,
+  Badge,
 } from '@chakra-ui/react'
 import {
   FiPlay,
@@ -21,6 +23,7 @@ import {
   FiVolumeX,
   FiMaximize,
   FiSettings,
+  FiUnlock,
 } from 'react-icons/fi'
 import Hls from 'hls.js'
 import { usePlayer } from '@hooks/usePlayer'
@@ -36,6 +39,7 @@ const Player = () => {
   const [volume, setVolume] = useState(1)
   const [currentTime, setCurrentTime] = useState(0)
   const [duration, setDuration] = useState(0)
+  const [debridService, setDebridService] = useState<'real-debrid' | 'all-debrid' | 'premiumize' | undefined>()
   const { currentVideo, playerConfig, setPlayerConfig } = usePlayer()
   const { updateProgress } = useProgress()
 
@@ -43,6 +47,7 @@ const Player = () => {
     if (!currentVideo?.streamUrl || !videoRef.current) return
 
     const video = videoRef.current
+    setDebridService(currentVideo.debridService)
 
     const setupHls = () => {
       const hls = new Hls({
@@ -184,6 +189,23 @@ const Player = () => {
           </HStack>
 
           <HStack spacing={4}>
+            {debridService && (
+              <Tooltip label={`Unlocked with ${debridService}`} placement="top">
+                <Badge
+                  display="flex"
+                  alignItems="center"
+                  gap={1}
+                  colorScheme={{
+                    'real-debrid': 'red',
+                    'all-debrid': 'blue',
+                    'premiumize': 'green'
+                  }[debridService]}
+                >
+                  <FiUnlock />
+                  {debridService}
+                </Badge>
+              </Tooltip>
+            )}
             <IconButton
               aria-label={isMuted ? 'Unmute' : 'Mute'}
               icon={isMuted ? <FiVolumeX /> : <FiVolume2 />}

@@ -24,6 +24,7 @@ import { useState } from 'react'
 import { useAddons } from '@hooks/useAddons'
 import { usePlayer } from '@hooks/usePlayer'
 import { useTMDB } from '@hooks/useTMDB'
+import { useDebrid } from '@hooks/useDebrid'
 import type { AddonManifest, PlayerType, QualityPreset } from '@/types'
 import { useEffect } from 'react'
 
@@ -34,6 +35,14 @@ const Settings = () => {
   const { addons, addAddon, removeAddon } = useAddons()
   const { playerConfig, setPlayerConfig } = usePlayer()
   const { setApiKey, setLanguage, setIncludeAdult, apiKey } = useTMDB()
+  const { 
+    realDebridApiKey,
+    allDebridApiKey,
+    premiumizeApiKey,
+    setRealDebridApiKey,
+    setAllDebridApiKey,
+    setPremiumizeApiKey
+  } = useDebrid()
 
   const handleAddAddon = async () => {
     try {
@@ -206,6 +215,96 @@ const Settings = () => {
 
         <Card bg="background.secondary">
           <CardHeader>
+            <Heading size="md">Debrid Services</Heading>
+          </CardHeader>
+          <CardBody>
+            <VStack spacing={4} align="stretch">
+              <FormControl>
+                <FormLabel htmlFor="real-debrid-key">Real-Debrid API Key</FormLabel>
+                <HStack>
+                  <Input
+                    id="real-debrid-key"
+                    type="password"
+                    placeholder="Enter Real-Debrid API key"
+                    value={realDebridApiKey}
+                    onChange={(e) => setRealDebridApiKey(e.target.value)}
+                  />
+                  <Button
+                    onClick={async () => {
+                      const isValid = await useDebrid.getState().testRealDebridKey()
+                      toast({
+                        title: isValid ? 'Real-Debrid API key is valid' : 'Invalid Real-Debrid API key',
+                        status: isValid ? 'success' : 'error',
+                        duration: 3000,
+                        isClosable: true
+                      })
+                    }}
+                    isDisabled={!realDebridApiKey}
+                  >
+                    Test
+                  </Button>
+                </HStack>
+              </FormControl>
+
+              <FormControl>
+                <FormLabel htmlFor="all-debrid-key">All-Debrid API Key</FormLabel>
+                <HStack>
+                  <Input
+                    id="all-debrid-key"
+                    type="password"
+                    placeholder="Enter All-Debrid API key"
+                    value={allDebridApiKey}
+                    onChange={(e) => setAllDebridApiKey(e.target.value)}
+                  />
+                  <Button
+                    onClick={async () => {
+                      const isValid = await useDebrid.getState().testAllDebridKey()
+                      toast({
+                        title: isValid ? 'All-Debrid API key is valid' : 'Invalid All-Debrid API key',
+                        status: isValid ? 'success' : 'error',
+                        duration: 3000,
+                        isClosable: true
+                      })
+                    }}
+                    isDisabled={!allDebridApiKey}
+                  >
+                    Test
+                  </Button>
+                </HStack>
+              </FormControl>
+
+              <FormControl>
+                <FormLabel htmlFor="premiumize-key">Premiumize API Key</FormLabel>
+                <HStack>
+                  <Input
+                    id="premiumize-key"
+                    type="password"
+                    placeholder="Enter Premiumize API key"
+                    value={premiumizeApiKey}
+                    onChange={(e) => setPremiumizeApiKey(e.target.value)}
+                  />
+                  <Button
+                    onClick={async () => {
+                      const isValid = await useDebrid.getState().testPremiumizeKey()
+                      toast({
+                        title: isValid ? 'Premiumize API key is valid' : 'Invalid Premiumize API key',
+                        status: isValid ? 'success' : 'error',
+                        duration: 3000,
+                        isClosable: true
+                      })
+                    }}
+                    isDisabled={!premiumizeApiKey}
+                  >
+                    Test
+                  </Button>
+                </HStack>
+              </FormControl>
+            </VStack>
+          </CardBody>
+        </Card>
+
+        <Card bg="background.secondary">
+          <CardHeader>
             <Heading size="md">Player Settings</Heading>
           </CardHeader>
           <CardBody>
@@ -234,7 +333,7 @@ const Settings = () => {
               </FormControl>
 
               <FormControl>
-                <FormLabel htmlFor="external-player-select">External Player</FormLabel>
+                <FormLabel htmlFor="external-player-select">Primary External Player</FormLabel>
                 <Select
                   id="external-player-select"
                   defaultValue="infuse"
@@ -245,6 +344,20 @@ const Settings = () => {
                   <option value="outplayer">Outplayer</option>
                   <option value="vidhub">Vidhub</option>
                 </Select>
+              </FormControl>
+
+              <FormControl>
+                <FormLabel htmlFor="fallback-player-select">Fallback Player</FormLabel>
+                <Select
+                  id="fallback-player-select"
+                  defaultValue="vlc"
+                  isDisabled={!localStorage.getItem('enableExternalPlayers')}
+                  onChange={(e) => localStorage.setItem('fallbackPlayer', e.target.value)}
+                >
+                  <option value="vlc">VLC</option>
+                  <option value="outplayer">Outplayer</option>
+                </Select>
+                <Text fontSize="sm" color="gray.500">Used when primary player fails to open</Text>
               </FormControl>
 
               <FormControl>

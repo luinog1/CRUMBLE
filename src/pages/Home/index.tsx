@@ -121,11 +121,19 @@ const Home = () => {
 
           const type = catalog.type === 'movie' ? 'movie' : 'tv'
           const response = await fetch(
-            `https://api.themoviedb.org/3/trending/${type}/week?api_key=${tmdbApiKey}`
+            `https://api.themoviedb.org/3/trending/${type}/week`,
+            {
+              headers: {
+                'Authorization': `Bearer ${tmdbApiKey}`,
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+              }
+            }
           )
 
           if (!response.ok) {
-            throw new Error(`TMDB API error: ${response.status}`)
+            const errorData = await response.json().catch(() => ({}))
+            throw new Error(`TMDB API error: ${response.status} - ${errorData.status_message || response.statusText}`)
           }
 
           const data = await response.json()
@@ -153,27 +161,31 @@ const Home = () => {
       }
     }
 
-    // Fetch items for all catalogs
-    const allCatalogs = [...movieCatalogs, ...seriesCatalogs]
-    if (allCatalogs.length === 0) {
-      // Fetch trending when no catalogs are available
-      const trendingMovie = {
-        type: 'movie' as const,
-        id: 'trending',
-        name: 'Trending Movies',
-        isVirtual: true
-      }
-      const trendingSeries = {
-        type: 'series' as const,
-        id: 'trending',
-        name: 'Trending TV Shows',
-        isVirtual: true
-      }
-      fetchCatalogItems(trendingMovie)
-      fetchCatalogItems(trendingSeries)
-    } else {
-      allCatalogs.forEach(fetchCatalogItems)
+    // Always fetch trending catalogs
+    const trendingMovie = {
+      type: 'movie' as const,
+      id: 'trending',
+      name: 'Trending Movies',
+      isVirtual: true
     }
+    const trendingSeries = {
+      type: 'series' as const,
+      id: 'trending',
+      name: 'Trending TV Shows',
+      isVirtual: true
+    }
+    
+    // Fetch trending items first
+    fetchCatalogItems(trendingMovie)
+    fetchCatalogItems(trendingSeries)
+    
+    // Then fetch items for all other catalogs
+    const allCatalogs = [...movieCatalogs, ...seriesCatalogs]
+    allCatalogs.forEach(catalog => {
+      if (catalog.id !== 'trending') {
+        fetchCatalogItems(catalog)
+      }
+    })
   }, [movieCatalogs, seriesCatalogs, getCatalogItems])
 
   return (

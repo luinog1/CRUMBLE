@@ -1,8 +1,9 @@
 import { create } from 'zustand'
 import { Stream, PlayerConfig, Video, PlayerType } from '@/types'
+import { useDebrid } from './useDebrid'
 
 interface PlayerState {
-  currentVideo: Video | null
+  currentVideo: (Video & { debridService?: 'real-debrid' | 'all-debrid' | 'premiumize' }) | null
   playerConfig: PlayerConfig
   isPlaying: boolean
   volume: number
@@ -42,25 +43,74 @@ export const usePlayer = create<PlayerState>((set) => ({
         throw new Error('Video has no stream URL');
       }
 
+      // Try to resolve through Debrid services first
+      const debrid = useDebrid.getState();
+      const resolveResult = await debrid.resolveLink(video.streamUrl);
+      const finalStreamUrl = resolveResult.url || video.streamUrl;
+
       // Check if external players are enabled
       const useExternalPlayer = localStorage.getItem('enableExternalPlayers') === 'true';
       const externalPlayer = localStorage.getItem('externalPlayer') || 'infuse';
 
       if (useExternalPlayer) {
-        // Handle external player URLs
+        const encodedUrl = encodeURIComponent(finalStreamUrl);
         let externalUrl = '';
-        switch (externalPlayer) {
-          case 'infuse':
-            externalUrl = `infuse://x-callback-url/play?url=${encodeURIComponent(video.streamUrl)}`;
-            break;
-          case 'outplayer':
-            externalUrl = `outplayer://${encodeURIComponent(video.streamUrl)}`;
-            break;
-          case 'vidhub':
-            externalUrl = `vidhub://play?url=${encodeURIComponent(video.streamUrl)}`;
-            break;
-        }
-        window.location.href = externalUrl;
+
+        const handleExternalPlayer = async () => {
+          const openExternalPlayer = async (url: string) => {
+            const button = document.createElement('button');
+            button.style.display = 'none';
+            button.onclick = () => {
+              const a = document.createElement('a');
+              a.style.display = 'none';
+              a.href = url;
+              document.body.appendChild(a);
+              a.click();
+              document.body.removeChild(a);
+            };
+            document.body.appendChild(button);
+            button.click();
+            document.body.removeChild(button);
+            return new Promise((resolve) => setTimeout(resolve, 1000));
+          };
+
+          const tryFallbackPlayer = async () => {
+            const fallbackPlayer = localStorage.getItem('fallbackPlayer') || 'vlc';
+            switch (fallbackPlayer) {
+              case 'vlc':
+                await openExternalPlayer(`vlc://${encodedUrl}`);
+                break;
+              case 'outplayer':
+                await openExternalPlayer(`outplayer://${encodedUrl}`);
+                break;
+            }
+          };
+
+          try {
+            switch (externalPlayer) {
+              case 'infuse':
+                const infuseUrl = finalStreamUrl.startsWith('magnet:') ?
+                  `infuse://x-callback-url/play?url=${encodedUrl}` :
+                  `infuse://x-callback-url/play?url=${encodedUrl}&x-success=crumble://`;
+                await openExternalPlayer(infuseUrl);
+                setTimeout(tryFallbackPlayer, 2000);
+                break;
+              case 'outplayer':
+                externalUrl = `outplayer://${encodedUrl}`;
+                await openExternalPlayer(externalUrl);
+                break;
+              case 'vidhub':
+                externalUrl = `vidhub://play?url=${encodedUrl}`;
+                await openExternalPlayer(externalUrl);
+                break;
+            }
+          } catch (error) {
+            console.error('Failed to open external player:', error);
+            await tryFallbackPlayer();
+          }
+        };
+
+        await handleExternalPlayer();
         return;
       }
 
@@ -96,7 +146,7 @@ export const usePlayer = create<PlayerState>((set) => ({
 
       set({
         playerConfig: config,
-        currentVideo: video,
+        currentVideo: { ...video, debridService: resolveResult.service },
         isPlaying: true
       });
     } catch (error) {
