@@ -1,0 +1,6 @@
+<svg width="500" height="750" viewBox="0 0 500 750" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="500" height="750" fill="#1A202C"/>
+  <path d="M250 300C277.614 300 300 277.614 300 250C300 222.386 277.614 200 250 200C222.386 200 200 222.386 200 250C200 277.614 222.386 300 250 300Z" fill="#2D3748"/>
+  <path d="M166.667 416.667C166.667 372.483 202.483 336.667 246.667 336.667H253.333C297.517 336.667 333.333 372.483 333.333 416.667V416.667C333.333 420.167 330.5 423 327 423H173C169.5 423 166.667 420.167 166.667 416.667V416.667Z" fill="#2D3748"/>
+  <text x="250" y="500" font-family="system-ui, -apple-system, sans-serif" font-size="24" fill="#A0AEC0" text-anchor="middle">No Poster Available</text>
+</svg>
