@@ -7,29 +7,30 @@ import { useLibrary } from '@hooks/useLibrary'
 const MotionBox = motion(Box)
 
 interface FeaturedContentProps {
-  title?: string
-  description?: string
-  backgroundImage?: string
-  videoId?: string
+  title: string
+  description: string
+  backgroundImage: string
+  videoId: string
+  type: 'movie' | 'series'
 }
 
 const FeaturedContent = ({
-  title = 'The Last of Us',
-  description = 'After a global pandemic destroys civilization, a hardened survivor takes charge of a 14-year-old girl who may be humanity\'s last hope.',
-  backgroundImage = 'https://image.tmdb.org/t/p/original/uDgy6hyPd82kOHh6I95FLtLnj6p.jpg',
-  videoId = 'last-of-us-s01e01'
+  title,
+  description,
+  backgroundImage,
+  videoId,
+  type
 }: FeaturedContentProps) => {
   const { playVideo } = usePlayer()
   const { addToLibrary } = useLibrary()
 
   return (
     <MotionBox
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
       position="relative"
       height="70vh"
       borderRadius="xl"
       overflow="hidden"
+      role="group"
     >
       <Image
         src={backgroundImage}
@@ -37,6 +38,20 @@ const FeaturedContent = ({
         objectFit="cover"
         w="full"
         h="full"
+        transition="transform 0.3s ease-in-out"
+        _groupHover={{ transform: 'scale(1.05)' }}
+      />
+
+      <Box
+        position="absolute"
+        top={0}
+        left={0}
+        right={0}
+        bottom={0}
+        bg="linear-gradient(0deg, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.5) 50%, rgba(0,0,0,0.3) 100%)"
+        opacity={0.8}
+        transition="opacity 0.3s ease-in-out"
+        _groupHover={{ opacity: 1 }}
       />
 
       <Box
@@ -44,9 +59,11 @@ const FeaturedContent = ({
         bottom={0}
         left={0}
         right={0}
-        bgGradient="linear(to-t, background.primary, transparent)"
         p={8}
         color="white"
+        transform="translateY(0)"
+        transition="transform 0.3s ease-in-out"
+        _groupHover={{ transform: 'translateY(-10px)' }}
       >
         <Flex direction="column" maxW="2xl">
           <Heading as="h1" size="2xl" mb={4}>
@@ -59,17 +76,25 @@ const FeaturedContent = ({
             <Button
               leftIcon={<FiPlay />}
               size="lg"
+              colorScheme="blue"
               onClick={() => playVideo(videoId)}
+              _hover={{ transform: 'scale(1.05)' }}
+              transition="transform 0.2s"
             >
-              Play
+              Watch Now
             </Button>
             <Button
               leftIcon={<FiPlus />}
               size="lg"
               variant="outline"
+              _hover={{
+                bg: 'whiteAlpha.200',
+                transform: 'scale(1.05)'
+              }}
+              transition="all 0.2s"
               onClick={() => addToLibrary({
                 id: videoId,
-                type: 'series',
+                type,
                 addedAt: Date.now(),
                 metadata: {
                   title,

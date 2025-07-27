@@ -1,12 +1,12 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit'
 import type { RootState } from '../index'
-import type { AddonManifest, CatalogRequest } from '@types'
+import type { AddonManifest, CatalogItem } from '@/types'
 
-interface AddonState {
+type AddonState = {
   addons: AddonManifest[]
   loading: boolean
   error: string | null
-  catalogs: Record<string, any[]>
+  catalogs: Record<string, CatalogItem[]>
   catalogsLoading: Record<string, boolean>
   catalogsError: Record<string, string | null>
 }
@@ -20,27 +20,38 @@ const initialState: AddonState = {
   catalogsError: {},
 }
 
-export const fetchAddonManifest = createAsyncThunk(
+export const fetchAddonManifest = createAsyncThunk<AddonManifest, string>(
   'addons/fetchManifest',
   async (url: string) => {
     const response = await fetch(url)
     if (!response.ok) {
-      throw new Error('Failed to fetch addon manifest')
+      throw new Error(`Failed to fetch addon manifest: ${response.statusText}`)
     }
-    const manifest: AddonManifest = await response.json()
+    const manifest = await response.json() as AddonManifest
     return manifest
   }
 )
 
-export const fetchCatalog = createAsyncThunk(
+type CatalogFetchRequest = {
+  addonId: string
+  endpoint: string
+  type: string
+}
+
+type CatalogFetchResponse = {
+  addonId: string
+  type: string
+  catalog: CatalogItem[]
+}
+
+export const fetchCatalog = createAsyncThunk<CatalogFetchResponse, CatalogFetchRequest>(
   'addons/fetchCatalog',
-  async (request: { addonId: string; endpoint: string; type: string; extra?: CatalogRequest[] }) => {
-    const { addonId, type, endpoint, extra } = request
+  async ({ addonId, type, endpoint }) => {
     const response = await fetch(`${endpoint}/catalog/${type}/catalog.json`)
     if (!response.ok) {
-      throw new Error('Failed to fetch catalog')
+      throw new Error(`Failed to fetch catalog: ${response.statusText}`)
     }
-    const catalog = await response.json()
+    const catalog = await response.json() as CatalogItem[]
     return { addonId, type, catalog }
   }
 )
@@ -50,7 +61,7 @@ export const addonSlice = createSlice({
   initialState,
   reducers: {
     removeAddon: (state, action: PayloadAction<string>) => {
-      state.addons = state.addons.filter((addon: AddonManifest) => addon.id !== action.payload)
+      state.addons = state.addons.filter((addon) => addon.id !== action.payload)
       // Clean up related catalogs
       Object.keys(state.catalogs).forEach(key => {
         if (key.startsWith(action.payload)) {
@@ -73,7 +84,7 @@ export const addonSlice = createSlice({
       })
       .addCase(fetchAddonManifest.fulfilled, (state, action) => {
         state.loading = false
-        const existingIndex = state.addons.findIndex((addon: AddonManifest) => addon.id === action.payload.id)
+        const existingIndex = state.addons.findIndex((addon) => addon.id === action.payload.id)
         if (existingIndex >= 0) {
           state.addons[existingIndex] = action.payload
         } else {
@@ -82,7 +93,7 @@ export const addonSlice = createSlice({
       })
       .addCase(fetchAddonManifest.rejected, (state, action) => {
         state.loading = false
-        state.error = action.error.message || 'Failed to fetch addon manifest'
+        state.error = action.error.message ?? 'Failed to fetch addon manifest'
       })
       // Fetch Catalog
       .addCase(fetchCatalog.pending, (state, action) => {
@@ -99,21 +110,21 @@ export const addonSlice = createSlice({
       .addCase(fetchCatalog.rejected, (state, action) => {
         const key = `${action.meta.arg.addonId}_${action.meta.arg.type}`
         state.catalogsLoading[key] = false
-        state.catalogsError[key] = action.error.message || 'Failed to fetch catalog'
+        state.catalogsError[key] = action.error.message ?? 'Failed to fetch catalog'
       })
   },
 })
 
 export const { removeAddon, clearError } = addonSlice.actions
 
-export const selectAddons = (state: RootState) => state.addons.addons
-export const selectAddonLoading = (state: RootState) => state.addons.loading
-export const selectAddonError = (state: RootState) => state.addons.error
+export const selectAddons = (state: RootState): AddonManifest[] => state.addons.addons
+export const selectAddonLoading = (state: RootState): boolean => state.addons.loading
+export const selectAddonError = (state: RootState): string | null => state.addons.error
 export const selectCatalog = (addonId: string, type: string) => 
-  (state: RootState) => state.addons.catalogs[`${addonId}_${type}`] || []
+  (state: RootState): CatalogItem[] => state.addons.catalogs[`${addonId}_${type}`] ?? []
 export const selectCatalogLoading = (addonId: string, type: string) =>
-  (state: RootState) => state.addons.catalogsLoading[`${addonId}_${type}`] || false
+  (state: RootState): boolean => state.addons.catalogsLoading[`${addonId}_${type}`] ?? false
 export const selectCatalogError = (addonId: string, type: string) =>
-  (state: RootState) => state.addons.catalogsError[`${addonId}_${type}`] || null
+  (state: RootState): string | null => state.addons.catalogsError[`${addonId}_${type}`] ?? null
 
 export default addonSlice.reducer

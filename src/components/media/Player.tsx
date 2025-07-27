@@ -13,7 +13,6 @@ import {
   MenuButton,
   MenuList,
   MenuItem,
-  Button,
 } from '@chakra-ui/react'
 import {
   FiPlay,
@@ -26,7 +25,9 @@ import {
 import Hls from 'hls.js'
 import { usePlayer } from '@hooks/usePlayer'
 import { useProgress } from '@hooks/useProgress'
-import { PlayerConfig } from '@/types'
+import type { PlayerConfig, Video } from '@/types'
+
+type VideoQuality = 'auto' | '1080p' | '720p'
 
 const Player = () => {
   const videoRef = useRef<HTMLVideoElement>(null)
@@ -43,38 +44,47 @@ const Player = () => {
 
     const video = videoRef.current
 
+    const setupHls = () => {
+      const hls = new Hls({
+        enableWorker: true,
+        lowLatencyMode: true,
+      })
+      hls.loadSource(currentVideo.url)
+      hls.attachMedia(video)
+      hls.on(Hls.Events.MANIFEST_PARSED, () => {
+        void video.play()
+      })
+
+      return () => {
+        hls.destroy()
+      }
+    }
+
+    const cleanup = () => {
+      video.removeAttribute('src')
+      video.load()
+    }
+
     if (currentVideo.url.includes('.m3u8')) {
       if (Hls.isSupported()) {
-        const hls = new Hls({
-          enableWorker: true,
-          lowLatencyMode: true,
-        })
-        hls.loadSource(currentVideo.url)
-        hls.attachMedia(video)
-        hls.on(Hls.Events.MANIFEST_PARSED, () => {
-          video.play()
-        })
+        return setupHls()
       } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
         video.src = currentVideo.url
         video.addEventListener('loadedmetadata', () => {
-          video.play()
+          void video.play()
         })
       }
     } else {
       video.src = currentVideo.url
       video.load()
-      video.play()
+      void video.play()
     }
 
-    // Check for HDR support
     if (window.matchMedia('(dynamic-range: high)').matches) {
       video.setAttribute('type', 'video/mp4; codecs=hevc.1.6.L93.B0; eotf=smpte2084')
     }
 
-    return () => {
-      video.removeAttribute('src')
-      video.load()
-    }
+    return cleanup
   }, [currentVideo])
 
   useEffect(() => {
@@ -86,16 +96,19 @@ const Player = () => {
   }, [volume, isMuted])
 
   const handleTimeUpdate = () => {
-    if (!videoRef.current) return
+    if (!videoRef.current || !currentVideo) return
 
-    setCurrentTime(videoRef.current.currentTime)
+    const video = videoRef.current
+    setCurrentTime(video.currentTime)
+    // Note: We need videoId and type from somewhere else since Stream doesn't have these properties
+    // This would typically come from the video metadata or be passed as props
     updateProgress({
-      id: currentVideo?.id || '',
-      type: currentVideo?.type || 'movie',
-      position: videoRef.current.currentTime,
-      duration: videoRef.current.duration,
+      id: currentVideo.title || 'unknown',
+      type: currentVideo.type || 'movie',
+      position: video.currentTime,
+      duration: video.duration,
       lastWatched: Date.now(),
-      completed: videoRef.current.currentTime >= videoRef.current.duration - 5
+      completed: video.currentTime >= video.duration - 5
     })
   }
 
@@ -105,7 +118,7 @@ const Player = () => {
     return `${minutes}:${seconds.toString().padStart(2, '0')}`
   }
 
-  const handleQualityChange = (quality: string) => {
+  const handleQualityChange = (quality: VideoQuality) => {
     setPlayerConfig({
       ...playerConfig,
       options: {
@@ -145,7 +158,11 @@ const Player = () => {
           <IconButton
             aria-label={isPlaying ? 'Pause' : 'Play'}
             icon={isPlaying ? <FiPause /> : <FiPlay />}
-            onClick={() => videoRef.current?.[isPlaying ? 'pause' : 'play']()}
+            onClick={() => {
+              const video = videoRef.current
+              if (!video) return
+              void (isPlaying ? video.pause() : video.play())
+            }}
           />
 
           <HStack flex={1} spacing={4}>
@@ -220,7 +237,7 @@ const Player = () => {
             <IconButton
               aria-label="Fullscreen"
               icon={<FiMaximize />}
-              onClick={() => videoRef.current?.requestFullscreen()}
+              onClick={() => void videoRef.current?.requestFullscreen()}
             />
           </HStack>
         </Flex>

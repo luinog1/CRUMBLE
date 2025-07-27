@@ -82,8 +82,11 @@ export interface Link {
 }
 
 // Player Types
+export type PlayerType = 'hls.js' | 'shaka' | 'videojs' | 'native';
+export type QualityPreset = 'auto' | '1080p' | '720p' | '480p';
+
 export interface PlayerConfig {
-  type: 'hls.js' | 'shaka' | 'videojs' | 'native';
+  type: PlayerType;
   options?: {
     autoplay?: boolean;
     muted?: boolean;
@@ -127,6 +130,16 @@ export interface TMDBConfig {
   apiKey?: string;
   includeAdult?: boolean;
   language?: string;
+}
+
+// Catalog Types
+export interface CatalogItem {
+  id: string;
+  title: string;
+  poster?: string;
+  type: 'movie' | 'series';
+  year?: number;
+  rating?: number;
 }
 
 // UI Types

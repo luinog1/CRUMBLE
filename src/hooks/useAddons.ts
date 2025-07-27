@@ -1,20 +1,22 @@
-import create from 'zustand'
+import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import axios from 'axios'
-import { AddonManifest, CatalogRequest } from '@/types'
+import { createJSONStorage } from 'zustand/middleware'
 
-interface AddonState {
+import type { AddonManifest, CatalogRequest } from '@/types'
+import type { CatalogItem } from '@/components/catalog/CatalogGrid'
+
+type AddonState = {
   addons: AddonManifest[]
   catalogs: CatalogRequest[]
   loading: boolean
   error: string | null
   addAddon: (url: string) => Promise<void>
   removeAddon: (id: string) => void
-  getCatalogItems: (catalogId: string, filter?: Record<string, string>) => any[]
+  getCatalogItems: (catalogId: string, filter?: Record<string, string>) => Promise<CatalogItem[]>
   refreshCatalogs: () => Promise<void>
 }
 
-export const useAddons = create<AddonState>(
+export const useAddons = create<AddonState>()(
   persist(
     (set, get) => ({
       addons: [],
@@ -26,16 +28,14 @@ export const useAddons = create<AddonState>(
         try {
           set({ loading: true, error: null })
           
-          // Fetch addon manifest
-          const response = await axios.get(url)
-          const manifest: AddonManifest = response.data
-
-          // Validate manifest
+          const response = await fetch(url)
+          if (!response.ok) throw new Error('Failed to fetch addon manifest')
+          
+          const manifest = await response.json() as AddonManifest
           if (!manifest.id || !manifest.version || !manifest.resources) {
             throw new Error('Invalid addon manifest')
           }
 
-          // Add addon if it doesn't exist
           const existingAddon = get().addons.find(a => a.id === manifest.id)
           if (!existingAddon) {
             set(state => ({
@@ -63,32 +63,36 @@ export const useAddons = create<AddonState>(
         }))
       },
 
-      getCatalogItems: (catalogId: string, filter?: Record<string, string>) => {
+      getCatalogItems: async (catalogId: string, filter?: Record<string, string>) => {
         const catalog = get().catalogs.find(c => c.id === catalogId)
         if (!catalog) return []
 
-        // Find the addon that owns this catalog
         const addon = get().addons.find(a => a.catalogs?.find(c => c.id === catalogId))
         if (!addon) return []
 
-        // Construct the catalog request URL
-        const baseUrl = addon.resources.find(r => r.startsWith('catalog'))
+        const baseUrl = addon.resources[0]
         if (!baseUrl) return []
 
-        // Add filters to the request
         const queryParams = new URLSearchParams(filter)
-        const url = `${baseUrl}/${catalog.type}/${catalog.id}?${queryParams}`
+        const url = `${baseUrl}/catalog/${catalog.type}/${catalog.id}?${queryParams}`
 
-        // This would typically be an async operation
-        // For now, return mock data
-        return [
-          {
-            id: 'mock-1',
-            name: 'Sample Movie',
-            type: 'movie',
-            poster: 'https://example.com/poster.jpg'
-          }
-        ]
+        try {
+          const response = await fetch(url)
+          if (!response.ok) throw new Error('Failed to fetch catalog items')
+          
+          const data = await response.json()
+          return data.map((item: { id: string; name?: string; title?: string; poster: string; type: string; year: number; rating: number }) => ({
+            id: item.id,
+            title: item.name || item.title || 'Unknown Title',
+            poster: item.poster,
+            type: item.type === 'movie' ? 'movie' : 'series',
+            year: item.year,
+            rating: item.rating
+          })) as CatalogItem[]
+        } catch (error) {
+          console.error('Failed to fetch catalog items:', error)
+          return []
+        }
       },
 
       refreshCatalogs: async () => {
@@ -96,14 +100,7 @@ export const useAddons = create<AddonState>(
           set({ loading: true, error: null })
 
           const { addons } = get()
-          const allCatalogs: CatalogRequest[] = []
-
-          // Collect catalogs from all addons
-          addons.forEach(addon => {
-            if (addon.catalogs) {
-              allCatalogs.push(...addon.catalogs)
-            }
-          })
+          const allCatalogs = addons.flatMap(addon => addon.catalogs || [])
 
           set({
             catalogs: allCatalogs,
@@ -119,7 +116,7 @@ export const useAddons = create<AddonState>(
     }),
     {
       name: 'crumble-addons',
-      version: 1,
+      storage: createJSONStorage(() => localStorage)
     }
   )
 )

@@ -50,7 +50,7 @@ const Search = () => {
 
             try {
               const response = await fetch(
-                `${addon.resources.find(r => r.startsWith('search'))}/${debouncedQuery}`
+                `${addon.resources.find((r: string) => r.startsWith('search'))}/${debouncedQuery}`
               )
               return response.json()
             } catch {

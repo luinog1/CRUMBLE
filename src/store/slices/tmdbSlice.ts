@@ -1,11 +1,13 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit'
 import type { RootState } from '../index'
-import type { TMDBConfig } from '@types'
+
+interface TMDBConfig {
+  apiKey?: string
+  includeAdult?: boolean
+  language?: string
+}
 
 interface TMDBState extends TMDBConfig {
-  apiKey?: string
-  language?: string
-  includeAdult?: boolean
   trending: {
     movies: any[]
     tvShows: any[]
@@ -28,7 +30,7 @@ interface TMDBState extends TMDBConfig {
 }
 
 const initialState: TMDBState = {
-  apiKey: null,
+  apiKey: undefined,
   language: 'en-US',
   includeAdult: false,
   trending: {
@@ -147,7 +149,7 @@ export const tmdbSlice = createSlice({
   name: 'tmdb',
   initialState,
   reducers: {
-    setApiKey: (state, action: PayloadAction<string | null>) => {
+    setApiKey: (state, action: PayloadAction<string | undefined>) => {
       state.apiKey = action.payload
     },
     setLanguage: (state, action: PayloadAction<string>) => {

@@ -1,6 +1,7 @@
-import { Box, Image, Text, Badge, VStack, HStack } from '@chakra-ui/react'
+import { Box, Image, Text, Badge, VStack, HStack, Icon, Tooltip, useColorModeValue } from '@chakra-ui/react'
 import { motion } from 'framer-motion'
-import { FiStar } from 'react-icons/fi'
+import { FiStar, FiCalendar, FiPlay } from 'react-icons/fi'
+import { Link } from 'react-router-dom'
 
 const MotionBox = motion(Box)
 
@@ -11,23 +12,18 @@ interface MediaCardProps {
   type: 'movie' | 'series'
   year?: number
   rating?: number
-  onClick?: () => void
 }
 
-const MediaCard = ({
-  id,
-  title,
-  poster,
-  type,
-  year,
-  rating,
-  onClick
-}: MediaCardProps) => {
+const MediaCard = ({ id, title, poster, type, year, rating }: MediaCardProps) => {
+  const cardBg = useColorModeValue('gray.800', 'gray.900')
+  const overlayBg = useColorModeValue(
+    'linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.3) 50%, rgba(0,0,0,0) 100%)',
+    'linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.4) 50%, rgba(0,0,0,0) 100%)'
+  )
   return (
     <MotionBox
-      as="article"
-      cursor="pointer"
-      onClick={onClick}
+      as={Link}
+      to={`/details/${type}/${id}`}
       whileHover={{ scale: 1.05 }}
       whileTap={{ scale: 0.95 }}
       initial={{ opacity: 0 }}
@@ -36,19 +32,23 @@ const MediaCard = ({
     >
       <Box
         position="relative"
-        borderRadius="lg"
+        borderRadius="xl"
         overflow="hidden"
-        bg="background.secondary"
-        boxShadow="xl"
+        bg={cardBg}
+        boxShadow="2xl"
+        role="group"
       >
         <Image
           src={poster?.startsWith('http') ? poster : `https://image.tmdb.org/t/p/w500${poster}`}
           alt={title}
           w="full"
-          h="400px"
+          h="auto"
+          aspectRatio="2/3"
           objectFit="cover"
           loading="lazy"
           fallbackSrc="/placeholder-poster.svg"
+          transition="transform 0.2s"
+          _groupHover={{ transform: 'scale(1.1)' }}
         />
 
         <Box
@@ -57,11 +57,23 @@ const MediaCard = ({
           left={0}
           right={0}
           bottom={0}
-          bgGradient="linear(to-t, background.primary 0%, transparent 50%)"
-          opacity={0}
+          background={overlayBg}
+          opacity={0.8}
           transition="opacity 0.2s"
           _groupHover={{ opacity: 1 }}
         />
+
+        <Box
+          position="absolute"
+          top="50%"
+          left="50%"
+          transform="translate(-50%, -50%)"
+          opacity={0}
+          transition="opacity 0.2s"
+          _groupHover={{ opacity: 1 }}
+        >
+          <Icon as={FiPlay} w={12} h={12} color="white" />
+        </Box>
 
         <VStack
           position="absolute"
@@ -81,20 +93,31 @@ const MediaCard = ({
             {title}
           </Text>
 
-          <HStack spacing={2}>
-            <Badge colorScheme={type === 'movie' ? 'blue' : 'purple'}>
-              {type}
-            </Badge>
-            {year && (
-              <Badge colorScheme="gray">
-                {year}
+          <HStack spacing={4} width="full" justify="space-between">
+            <HStack spacing={2}>
+              <Badge colorScheme={type === 'movie' ? 'blue' : 'purple'} variant="solid">
+                {type}
               </Badge>
-            )}
+              {year && (
+                <Tooltip label="Release Year" placement="top">
+                  <HStack spacing={1}>
+                    <Icon as={FiCalendar} color="gray.300" />
+                    <Text color="gray.300" fontSize="xs">
+                      {year}
+                    </Text>
+                  </HStack>
+                </Tooltip>
+              )}
+            </HStack>
             {rating && (
-              <HStack spacing={1}>
-                <FiStar />
-                <Text fontSize="sm">{rating}</Text>
-              </HStack>
+              <Tooltip label="Rating" placement="top">
+                <HStack spacing={1}>
+                  <Icon as={FiStar} color="yellow.400" />
+                  <Text color="gray.300" fontSize="xs">
+                    {rating.toFixed(1)}
+                  </Text>
+                </HStack>
+              </Tooltip>
             )}
           </HStack>
         </VStack>

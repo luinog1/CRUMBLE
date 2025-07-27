@@ -24,6 +24,7 @@ import { useState } from 'react'
 import { useAddons } from '@hooks/useAddons'
 import { usePlayer } from '@hooks/usePlayer'
 import { useTMDB } from '@hooks/useTMDB'
+import type { AddonManifest, PlayerType, QualityPreset } from '@/types'
 
 const Settings = () => {
   const toast = useToast()
@@ -41,6 +42,7 @@ const Settings = () => {
         title: 'Addon added successfully',
         status: 'success',
         duration: 3000,
+        isClosable: true
       })
     } catch (error) {
       toast({
@@ -48,6 +50,7 @@ const Settings = () => {
         description: error instanceof Error ? error.message : 'Unknown error',
         status: 'error',
         duration: 5000,
+        isClosable: true
       })
     }
   }
@@ -58,6 +61,7 @@ const Settings = () => {
       title: 'TMDB API key updated',
       status: 'success',
       duration: 3000,
+      isClosable: true
     })
   }
 
@@ -88,7 +92,7 @@ const Settings = () => {
               </HStack>
 
               <List spacing={2}>
-                {addons.map((addon) => (
+                {addons.map((addon: AddonManifest) => (
                   <ListItem
                     key={addon.id}
                     p={2}
@@ -170,10 +174,10 @@ const Settings = () => {
               <FormControl>
                 <FormLabel>Default Player</FormLabel>
                 <Select
-                  value={playerConfig.type}
+                  value={playerConfig.type as string}
                   onChange={(e) => setPlayerConfig({
                     ...playerConfig,
-                    type: e.target.value as any
+                    type: e.target.value as PlayerType
                   })}
                 >
                   <option value="hls.js">HLS.js</option>
@@ -185,14 +189,14 @@ const Settings = () => {
               <FormControl>
                 <FormLabel>Default Quality</FormLabel>
                 <Select
-                  value={playerConfig.options?.quality?.default}
+                  value={playerConfig.options?.quality?.default ?? 'auto'}
                   onChange={(e) => setPlayerConfig({
                     ...playerConfig,
                     options: {
                       ...playerConfig.options,
                       quality: {
                         ...playerConfig.options?.quality,
-                        default: e.target.value
+                        default: e.target.value as QualityPreset
                       }
                     }
                   })}
@@ -207,14 +211,8 @@ const Settings = () => {
               <FormControl display="flex" alignItems="center">
                 <FormLabel mb={0}>Enable HDR</FormLabel>
                 <Switch
-                  isChecked={playerConfig.options?.hdr}
-                  onChange={(e) => setPlayerConfig({
-                    ...playerConfig,
-                    options: {
-                      ...playerConfig.options,
-                      hdr: e.target.checked
-                    }
-                  })}
+                  isChecked={false}
+                  onChange={() => {}}
                 />
               </FormControl>
 
