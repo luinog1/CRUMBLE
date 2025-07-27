@@ -40,7 +40,7 @@ const Player = () => {
   const { updateProgress } = useProgress()
 
   useEffect(() => {
-    if (!currentVideo?.url || !videoRef.current) return
+    if (!currentVideo?.streamUrl || !videoRef.current) return
 
     const video = videoRef.current
 
@@ -49,7 +49,7 @@ const Player = () => {
         enableWorker: true,
         lowLatencyMode: true,
       })
-      hls.loadSource(currentVideo.url)
+      hls.loadSource(currentVideo.streamUrl)
       hls.attachMedia(video)
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
         void video.play()
@@ -65,17 +65,17 @@ const Player = () => {
       video.load()
     }
 
-    if (currentVideo.url.includes('.m3u8')) {
+    if (currentVideo.streamUrl.includes('.m3u8')) {
       if (Hls.isSupported()) {
         return setupHls()
       } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-        video.src = currentVideo.url
+        video.src = currentVideo.streamUrl
         video.addEventListener('loadedmetadata', () => {
           void video.play()
         })
       }
     } else {
-      video.src = currentVideo.url
+      video.src = currentVideo.streamUrl
       video.load()
       void video.play()
     }
@@ -100,10 +100,8 @@ const Player = () => {
 
     const video = videoRef.current
     setCurrentTime(video.currentTime)
-    // Note: We need videoId and type from somewhere else since Stream doesn't have these properties
-    // This would typically come from the video metadata or be passed as props
     updateProgress({
-      id: currentVideo.title || 'unknown',
+      id: currentVideo.id,
       type: currentVideo.type || 'movie',
       position: video.currentTime,
       duration: video.duration,

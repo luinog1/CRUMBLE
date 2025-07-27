@@ -5,6 +5,7 @@ import Home from '@pages/Home'
 import Search from '@pages/Search'
 import Library from '@pages/Library'
 import Settings from '@pages/Settings'
+import Details from '@pages/Details'
 import Player from '@components/media/Player'
 
 const App = () => {
@@ -17,6 +18,7 @@ const App = () => {
           <Route path="/search" element={<Search />} />
           <Route path="/library" element={<Library />} />
           <Route path="/settings" element={<Settings />} />
+          <Route path="/details/:type/:id" element={<Details />} />
         </Routes>
       </Box>
       <Player />

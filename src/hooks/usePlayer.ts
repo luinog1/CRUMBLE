@@ -1,13 +1,13 @@
 import { create } from 'zustand'
-import { Stream, PlayerConfig } from '@/types'
+import { Stream, PlayerConfig, Video, PlayerType } from '@/types'
 
 interface PlayerState {
-  currentVideo: Stream | null
+  currentVideo: Video | null
   playerConfig: PlayerConfig
   isPlaying: boolean
   volume: number
   isMuted: boolean
-  playVideo: (videoId: string) => void
+  playVideo: (video: Video | string) => void
   pauseVideo: () => void
   setVolume: (volume: number) => void
   setMuted: (muted: boolean) => void
@@ -32,23 +32,76 @@ export const usePlayer = create<PlayerState>((set) => ({
   volume: 1,
   isMuted: false,
 
-  playVideo: async (videoId: string) => {
+  playVideo: async (video: Video | string) => {
     try {
-      // Here you would typically fetch the stream URL from your addon system
-      // For now, we'll use a placeholder
-      const stream: Stream = {
-        url: `https://example.com/stream/${videoId}`,
-        title: 'Sample Stream',
-        quality: '1080p',
-        type: 'hls'
+      if (typeof video === 'string') {
+        throw new Error('Direct video ID playback is no longer supported');
+      }
+
+      if (!video.streamUrl) {
+        throw new Error('Video has no stream URL');
+      }
+
+      // Check if external players are enabled
+      const useExternalPlayer = localStorage.getItem('enableExternalPlayers') === 'true';
+      const externalPlayer = localStorage.getItem('externalPlayer') || 'infuse';
+
+      if (useExternalPlayer) {
+        // Handle external player URLs
+        let externalUrl = '';
+        switch (externalPlayer) {
+          case 'infuse':
+            externalUrl = `infuse://x-callback-url/play?url=${encodeURIComponent(video.streamUrl)}`;
+            break;
+          case 'outplayer':
+            externalUrl = `outplayer://${encodeURIComponent(video.streamUrl)}`;
+            break;
+          case 'vidhub':
+            externalUrl = `vidhub://play?url=${encodeURIComponent(video.streamUrl)}`;
+            break;
+        }
+        window.location.href = externalUrl;
+        return;
+      }
+
+      const streamUrl = video.streamUrl.toLowerCase();
+      const config: PlayerConfig = {
+        type: 'vlc' as PlayerType,
+        options: {
+          autoplay: true,
+          muted: false,
+          controls: true,
+          sources: [{
+            src: video.streamUrl,
+            type: streamUrl.includes('.m3u8') ? 'application/x-mpegURL'
+              : streamUrl.includes('.mpd') ? 'application/dash+xml'
+              : streamUrl.includes('magnet:') || streamUrl.includes('.torrent')
+                ? 'application/x-bittorrent'
+                : 'video/mp4'
+          }]
+        }
+      };
+
+      // Add trackers for torrent streams if needed
+      if (streamUrl.includes('magnet:') || streamUrl.includes('.torrent')) {
+        if (!config.options) {
+          config.options = {};
+        }
+        config.options.trackers = [
+          'wss://tracker.openwebtorrent.com',
+          'wss://tracker.btorrent.xyz',
+          'wss://tracker.webtorrent.io'
+        ];
       }
 
       set({
-        currentVideo: stream,
+        playerConfig: config,
+        currentVideo: video,
         isPlaying: true
-      })
+      });
     } catch (error) {
-      console.error('Failed to play video:', error)
+      console.error('Failed to play video:', error);
+      throw error;
     }
   },
 

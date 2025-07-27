@@ -77,7 +77,10 @@ const FeaturedContent = ({
               leftIcon={<FiPlay />}
               size="lg"
               colorScheme="blue"
-              onClick={() => playVideo(videoId)}
+              onClick={() => {
+                // Navigate to details page instead of directly playing
+                window.location.href = `/details/${type}/${videoId}`
+              }}
               _hover={{ transform: 'scale(1.05)' }}
               transition="transform 0.2s"
             >

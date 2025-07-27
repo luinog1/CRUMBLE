@@ -7,7 +7,8 @@ export interface AddonManifest {
   catalogs?: CatalogRequest[];
   resources: string[];
   types: string[];
-  baseUrl?: string; // Added to store the addon's base URL
+  baseUrl?: string;
+  endpoints?: string[];
   behaviorHints?: {
     adult?: boolean;
     p2p?: boolean;
@@ -18,13 +19,16 @@ export interface CatalogRequest {
   type: string;
   id: string;
   name: string;
-  extra?: CatalogExtra[];
+  extra?: CatalogExtra[] | Record<string, string>;
+  isVirtual?: boolean;
+  addonId?: string;
 }
 
 export interface CatalogExtra {
   name: string;
-  options: string[];
+  options?: string[];
   isRequired?: boolean;
+  value?: string;
 }
 
 // Stream Types
@@ -32,7 +36,11 @@ export interface Stream {
   url: string;
   title?: string;
   quality?: string;
-  type?: 'hls' | 'dash' | 'mp4';
+  type?: 'hls' | 'dash' | 'mp4' | 'torrent';
+  size?: string | number;
+  seeders?: number;
+  source?: string;
+  addon?: string;
   behaviorHints?: {
     notWebReady?: boolean;
     bingeGroup?: string;
@@ -73,6 +81,9 @@ export interface Video {
   season?: number;
   episode?: number;
   thumbnail?: string;
+  poster?: string;
+  streamUrl?: string;
+  type?: 'hls' | 'dash' | 'mp4';
   streams?: Stream[];
 }
 
@@ -83,7 +94,7 @@ export interface Link {
 }
 
 // Player Types
-export type PlayerType = 'hls.js' | 'shaka' | 'videojs' | 'native';
+export type PlayerType = 'hls.js' | 'dash.js' | 'webtorrent' | 'html5' | 'vlc';
 export type QualityPreset = 'auto' | '1080p' | '720p' | '480p';
 
 export interface PlayerConfig {
@@ -100,6 +111,11 @@ export interface PlayerConfig {
       default?: string;
       options?: string[];
     };
+    trackers?: string[];
+    sources?: Array<{
+      src: string;
+      type: string;
+    }>;
   };
 }
 
@@ -141,6 +157,11 @@ export interface CatalogItem {
   type: 'movie' | 'series';
   year?: number;
   rating?: number;
+  // For virtual catalogs and stream scrapers
+  isVirtual?: boolean;
+  addonId?: string;
+  virtualCatalogId?: string;
+  streamScraperAddons?: string[];
 }
 
 // UI Types

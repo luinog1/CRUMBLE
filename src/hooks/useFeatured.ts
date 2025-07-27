@@ -28,6 +28,7 @@ type FeaturedState = {
   featured: FeaturedContent | null
   loading: boolean
   error: string | null
+  lastUpdate: number
   fetchFeatured: () => Promise<void>
 }
 
@@ -36,8 +37,17 @@ export const useFeatured = create<FeaturedState>(
     featured: null,
     loading: false,
     error: null,
+    lastUpdate: 0,
     fetchFeatured: async () => {
       const { getTrending } = useTMDB.getState()
+      const currentTime = Date.now()
+      const lastUpdate = useFeatured.getState().lastUpdate
+      const updateInterval = parseInt(localStorage.getItem('heroUpdateInterval') || '24') * 60 * 60 * 1000
+
+      // Return if not enough time has passed since last update
+      if (currentTime - lastUpdate < updateInterval) {
+        return
+      }
       
       try {
         set({ loading: true, error: null })
@@ -62,7 +72,7 @@ export const useFeatured = create<FeaturedState>(
           type: item.type
         }
 
-        set({ featured, loading: false })
+        set({ featured, loading: false, lastUpdate: currentTime })
       } catch (error) {
         set({
           error: error instanceof Error ? error.message : 'Failed to fetch featured content',

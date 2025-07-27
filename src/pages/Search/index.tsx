@@ -43,11 +43,20 @@ const Search = () => {
 
       setLoading(true)
       try {
-        // Search across all active addons
+        // Search across all active addons that support search
+        const searchAddons = addons.filter(addon => 
+          addon.resources && addon.resources.includes('search')
+        )
+        
+        // Get stream scraper addons that don't explicitly provide search
+        const streamScraperAddons = addons.filter(addon => 
+          addon.resources && 
+          addon.resources.includes('stream') && 
+          !addon.resources.includes('search')
+        )
+        
         const addonResults = await Promise.all(
-          addons.map(async (addon) => {
-            if (!addon.resources.includes('search')) return []
-
+          searchAddons.map(async (addon) => {
             try {
               const response = await fetch(
                 `${addon.resources.find((r: string) => r.startsWith('search'))}/${debouncedQuery}`
@@ -61,10 +70,16 @@ const Search = () => {
 
         // Search TMDB if available
         const tmdbResults = await searchContent(debouncedQuery)
+        
+        // Add stream scraper addon info to TMDB results
+        const enhancedTmdbResults = tmdbResults.map(item => ({
+          ...item,
+          streamScraperAddons: streamScraperAddons.map(a => a.id)
+        }))
 
         // Merge and deduplicate results
         const allResults = [
-          ...tmdbResults,
+          ...enhancedTmdbResults,
           ...addonResults.flat()
         ].filter(Boolean)
 

@@ -3,6 +3,14 @@ import { motion } from 'framer-motion'
 import { FiStar, FiCalendar, FiPlay } from 'react-icons/fi'
 import { Link } from 'react-router-dom'
 
+// Helper function to get the correct poster URL
+const getPosterUrl = (poster?: string): string => {
+  if (!poster) return '/placeholder-poster.svg';
+  if (poster.startsWith('http')) return poster;
+  if (poster.startsWith('/')) return poster;
+  return `https://image.tmdb.org/t/p/w500${poster}`;
+}
+
 const MotionBox = motion(Box)
 
 interface MediaCardProps {
@@ -39,7 +47,7 @@ const MediaCard = ({ id, title, poster, type, year, rating }: MediaCardProps) =>
         role="group"
       >
         <Image
-          src={poster?.startsWith('http') || poster?.startsWith('/') ? poster : poster ? `https://image.tmdb.org/t/p/w500${poster}` : '/placeholder-poster.svg'}
+          src={getPosterUrl(poster)}
           alt={title}
           w="full"
           h="auto"

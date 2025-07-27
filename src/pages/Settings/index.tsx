@@ -25,6 +25,7 @@ import { useAddons } from '@hooks/useAddons'
 import { usePlayer } from '@hooks/usePlayer'
 import { useTMDB } from '@hooks/useTMDB'
 import type { AddonManifest, PlayerType, QualityPreset } from '@/types'
+import { useEffect } from 'react'
 
 const Settings = () => {
   const toast = useToast()
@@ -32,7 +33,7 @@ const Settings = () => {
   const [tmdbKey, setTmdbKey] = useState('')
   const { addons, addAddon, removeAddon } = useAddons()
   const { playerConfig, setPlayerConfig } = usePlayer()
-  const { setApiKey, setLanguage, setIncludeAdult } = useTMDB()
+  const { setApiKey, setLanguage, setIncludeAdult, apiKey } = useTMDB()
 
   const handleAddAddon = async () => {
     try {
@@ -64,6 +65,10 @@ const Settings = () => {
       isClosable: true
     })
   }
+
+  useEffect(() => {
+    if (apiKey && !tmdbKey) setTmdbKey(apiKey)
+  }, [apiKey])
 
   return (
     <Box p={8}>
@@ -171,23 +176,74 @@ const Settings = () => {
 
         <Card bg="background.secondary">
           <CardHeader>
+            <Heading size="md">Hero Section</Heading>
+          </CardHeader>
+          <CardBody>
+            <VStack spacing={4} align="stretch">
+              <FormControl display="flex" alignItems="center">
+                <FormLabel htmlFor="enable-hero-switch" mb={0}>Enable Hero Section</FormLabel>
+                <Switch
+                  id="enable-hero-switch"
+                  defaultChecked={true}
+                  onChange={(e) => localStorage.setItem('enableHero', e.target.checked.toString())}
+                />
+              </FormControl>
+              <FormControl>
+                <FormLabel htmlFor="hero-update-interval">Update Interval (hours)</FormLabel>
+                <Select
+                  id="hero-update-interval"
+                  defaultValue="24"
+                  onChange={(e) => localStorage.setItem('heroUpdateInterval', e.target.value)}
+                >
+                  <option value="12">12 Hours</option>
+                  <option value="24">24 Hours</option>
+                  <option value="48">48 Hours</option>
+                </Select>
+              </FormControl>
+            </VStack>
+          </CardBody>
+        </Card>
+
+        <Card bg="background.secondary">
+          <CardHeader>
             <Heading size="md">Player Settings</Heading>
           </CardHeader>
           <CardBody>
             <VStack spacing={4} align="stretch">
+              <FormControl display="flex" alignItems="center">
+                <FormLabel htmlFor="external-player-switch" mb={0}>Enable External Players</FormLabel>
+                <Switch
+                  id="external-player-switch"
+                  defaultChecked={false}
+                  onChange={(e) => localStorage.setItem('enableExternalPlayers', e.target.checked.toString())}
+                />
+              </FormControl>
+
               <FormControl>
-                <FormLabel htmlFor="default-player-select">Default Player</FormLabel>
+                <FormLabel htmlFor="internal-player-select">Internal Player</FormLabel>
                 <Select
-                  id="default-player-select"
-                  value={playerConfig.type as string}
+                  id="internal-player-select"
+                  defaultValue="vlc"
                   onChange={(e) => setPlayerConfig({
                     ...playerConfig,
-                    type: e.target.value as PlayerType
+                    type: 'vlc' as PlayerType
                   })}
                 >
-                  <option value="hls.js">HLS.js</option>
-                  <option value="shaka">Shaka Player</option>
-                  <option value="videojs">Video.js</option>
+                  <option value="vlc">VLC</option>
+                </Select>
+              </FormControl>
+
+              <FormControl>
+                <FormLabel htmlFor="external-player-select">External Player</FormLabel>
+                <Select
+                  id="external-player-select"
+                  defaultValue="infuse"
+                  isDisabled={!localStorage.getItem('enableExternalPlayers')}
+                  onChange={(e) => localStorage.setItem('externalPlayer', e.target.value)}
+                >
+                  <option value="infuse">Infuse</option>
+                  <option value="outplayer">Outplayer</option>
+                  <option value="vidhub">Vidhub</option>
                 </Select>
               </FormControl>
 
@@ -211,30 +267,6 @@ const Settings = () => {
                   <option value="1080p">1080p</option>
                   <option value="720p">720p</option>
                   <option value="480p">480p</option>
-                </Select>
-              </FormControl>
-
-              <FormControl display="flex" alignItems="center">
-                <FormLabel htmlFor="enable-hdr-switch" mb={0}>Enable HDR</FormLabel>
-                <Switch
-                  id="enable-hdr-switch"
-                  isChecked={false}
-                  onChange={() => {}}
-                />
-              </FormControl>
-
-              <Divider />
-
-              <FormControl>
-                <FormLabel htmlFor="external-player-select">External Player</FormLabel>
-                <Select
-                  id="external-player-select"
-                  defaultValue="vlc"
-                  onChange={(e) => localStorage.setItem('externalPlayer', e.target.value)}
-                >
-                  <option value="vlc">VLC</option>
-                  <option value="infuse">Infuse</option>
-                  <option value="outplayer">Outplayer</option>
                 </Select>
               </FormControl>
             </VStack>
