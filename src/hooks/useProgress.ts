@@ -104,7 +104,18 @@ export const useProgress = create<ProgressState>()(
       partialize: (state) => ({
         progress: state.progress,
         library: state.library
-      })
+      }),
+      version: 1,
+      migrate: (persistedState: any, version: number) => {
+        if (version === 0) {
+          // Handle migration from version 0 to 1
+          return {
+            ...persistedState,
+            // Add any necessary migrations here
+          }
+        }
+        return persistedState
+      }
     }
   )
 )

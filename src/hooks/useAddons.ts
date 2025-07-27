@@ -144,7 +144,28 @@ export const useAddons = create<AddonState>()(
     }),
     {
       name: 'crumble-addons',
-      storage: createJSONStorage(() => localStorage)
+      storage: createJSONStorage(() => localStorage),
+      version: 1,
+      migrate: (persistedState: any, version: number) => {
+        if (version === 0) {
+          // Handle migration from version 0 to 1
+          // Ensure all addons have baseUrl property
+          return {
+            ...persistedState,
+            addons: (persistedState.addons || []).map((addon: any) => {
+              if (!addon.baseUrl && addon.id) {
+                console.log('Migrating addon without baseUrl:', addon.id)
+                return {
+                  ...addon,
+                  baseUrl: ''
+                }
+              }
+              return addon
+            })
+          }
+        }
+        return persistedState
+      }
     }
   )
 )

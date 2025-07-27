@@ -77,6 +77,7 @@ const Settings = () => {
           <CardBody>
             <VStack spacing={4} align="stretch">
               <HStack>
+                <label htmlFor="addon-url-input" className="sr-only">Enter addon manifest URL</label>
                 <Input
                   id="addon-url-input"
                   placeholder="Enter addon manifest URL"
@@ -129,7 +130,7 @@ const Settings = () => {
           <CardBody>
             <VStack spacing={4} align="stretch">
               <FormControl>
-                <FormLabel>API Key</FormLabel>
+                <FormLabel htmlFor="tmdb-api-key">API Key</FormLabel>
                 <HStack>
                   <Input
                     id="tmdb-api-key"
@@ -145,7 +146,7 @@ const Settings = () => {
               </FormControl>
 
               <FormControl>
-                <FormLabel>Language</FormLabel>
+                <FormLabel htmlFor="language-select">Language</FormLabel>
                 <Select
                   id="language-select"
                   onChange={(e) => setLanguage(e.target.value)}
@@ -161,7 +162,7 @@ const Settings = () => {
               </FormControl>
 
               <FormControl display="flex" alignItems="center">
-                <FormLabel mb={0}>Include Adult Content</FormLabel>
+                <FormLabel htmlFor="include-adult-switch" mb={0}>Include Adult Content</FormLabel>
                 <Switch id="include-adult-switch" onChange={(e) => setIncludeAdult(e.target.checked)} />
               </FormControl>
             </VStack>
@@ -175,7 +176,7 @@ const Settings = () => {
           <CardBody>
             <VStack spacing={4} align="stretch">
               <FormControl>
-                <FormLabel>Default Player</FormLabel>
+                <FormLabel htmlFor="default-player-select">Default Player</FormLabel>
                 <Select
                   id="default-player-select"
                   value={playerConfig.type as string}
@@ -191,7 +192,7 @@ const Settings = () => {
               </FormControl>
 
               <FormControl>
-                <FormLabel>Default Quality</FormLabel>
+                <FormLabel htmlFor="default-quality-select">Default Quality</FormLabel>
                 <Select
                   id="default-quality-select"
                   value={playerConfig.options?.quality?.default ?? 'auto'}
@@ -214,7 +215,7 @@ const Settings = () => {
               </FormControl>
 
               <FormControl display="flex" alignItems="center">
-                <FormLabel mb={0}>Enable HDR</FormLabel>
+                <FormLabel htmlFor="enable-hdr-switch" mb={0}>Enable HDR</FormLabel>
                 <Switch
                   id="enable-hdr-switch"
                   isChecked={false}
@@ -225,7 +226,7 @@ const Settings = () => {
               <Divider />
 
               <FormControl>
-                <FormLabel>External Player</FormLabel>
+                <FormLabel htmlFor="external-player-select">External Player</FormLabel>
                 <Select
                   id="external-player-select"
                   defaultValue="vlc"

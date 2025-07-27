@@ -39,7 +39,7 @@ const MediaCard = ({ id, title, poster, type, year, rating }: MediaCardProps) =>
         role="group"
       >
         <Image
-          src={poster?.startsWith('http') ? poster : `https://image.tmdb.org/t/p/w500${poster}`}
+          src={poster?.startsWith('http') || poster?.startsWith('/') ? poster : poster ? `https://image.tmdb.org/t/p/w500${poster}` : '/placeholder-poster.svg'}
           alt={title}
           w="full"
           h="auto"

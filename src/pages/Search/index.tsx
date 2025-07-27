@@ -93,6 +93,7 @@ const Search = () => {
           <InputLeftElement pointerEvents="none">
             <FiSearch />
           </InputLeftElement>
+          <label htmlFor="search-input" className="sr-only">Search movies, TV shows, and more...</label>
           <Input
             id="search-input"
             placeholder="Search movies, TV shows, and more..."
