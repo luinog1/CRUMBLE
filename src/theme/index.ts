@@ -9,9 +9,10 @@ const theme = extendTheme({
   config,
   colors: {
     brand: {
-      primary: '#00a4dc',
+      primary: '#80EF80',
       secondary: '#7b5dfa',
-      accent: '#00b4e4',
+      accent: '#80EF80',
+      highlight: '#80EF80'
     },
     background: {
       primary: '#000000',
@@ -34,20 +35,23 @@ const theme = extendTheme({
         _hover: {
           transform: 'translateY(-1px)',
           boxShadow: 'lg',
+          bg: 'brand.highlight'
         },
         _active: {
-          transform: 'translateY(0)',
+          transform: 'translateY(0)'
         },
       },
       variants: {
         solid: {
-          bg: 'brand.primary',
-          color: 'white',
+          bg: 'brand.highlight',
+          color: 'black',
           _hover: {
-            bg: 'brand.accent',
+            bg: 'brand.highlight',
+            opacity: 0.8
           },
         },
         ghost: {
+          color: 'brand.highlight',
           _hover: {
             bg: 'whiteAlpha.100',
           },
