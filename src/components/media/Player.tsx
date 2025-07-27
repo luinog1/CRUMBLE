@@ -25,7 +25,7 @@ import {
 import Hls from 'hls.js'
 import { usePlayer } from '@hooks/usePlayer'
 import { useProgress } from '@hooks/useProgress'
-import type { PlayerConfig, Video } from '@/types'
+
 
 type VideoQuality = 'auto' | '1080p' | '720p'
 
