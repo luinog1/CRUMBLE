@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { Stream, PlayerConfig, Video, PlayerType } from '@/types'
 import { useDebrid } from './useDebrid'
+import { openInExternalPlayer } from '@/utils/externalPlayer'
 
 interface PlayerState {
   currentVideo: (Video & { debridService?: 'real-debrid' | 'all-debrid' | 'premiumize' }) | null
@@ -53,70 +54,24 @@ export const usePlayer = create<PlayerState>((set) => ({
       const externalPlayer = localStorage.getItem('externalPlayer') || 'infuse';
 
       if (useExternalPlayer) {
-        const encodedUrl = encodeURIComponent(finalStreamUrl);
-        let externalUrl = '';
-
-        const handleExternalPlayer = async () => {
-          const openExternalPlayer = async (url: string) => {
-            const button = document.createElement('button');
-            button.style.display = 'none';
-            button.onclick = () => {
-              const a = document.createElement('a');
-              a.style.display = 'none';
-              a.href = url;
-              document.body.appendChild(a);
-              a.click();
-              document.body.removeChild(a);
-            };
-            document.body.appendChild(button);
-            button.click();
-            document.body.removeChild(button);
-            return new Promise((resolve) => setTimeout(resolve, 1000));
-          };
-
-          const tryFallbackPlayer = async () => {
-            const fallbackPlayer = localStorage.getItem('fallbackPlayer') || 'vlc';
-            switch (fallbackPlayer) {
-              case 'vlc':
-                await openExternalPlayer(`vlc://${encodedUrl}`);
-                break;
-              case 'outplayer':
-                await openExternalPlayer(`outplayer://${encodedUrl}`);
-                break;
-            }
-          };
-
-          try {
-            switch (externalPlayer) {
-              case 'infuse':
-                const infuseUrl = finalStreamUrl.startsWith('magnet:') ?
-                  `infuse://x-callback-url/play?url=${encodedUrl}` :
-                  `infuse://x-callback-url/play?url=${encodedUrl}&x-success=crumble://`;
-                await openExternalPlayer(infuseUrl);
-                setTimeout(tryFallbackPlayer, 2000);
-                break;
-              case 'outplayer':
-                externalUrl = `outplayer://${encodedUrl}`;
-                await openExternalPlayer(externalUrl);
-                break;
-              case 'vidhub':
-                externalUrl = `vidhub://play?url=${encodedUrl}`;
-                await openExternalPlayer(externalUrl);
-                break;
-            }
-          } catch (error) {
+        const fallbackPlayer = localStorage.getItem('fallbackPlayer') || 'outplayer';
+        
+        await openInExternalPlayer(finalStreamUrl, externalPlayer as 'infuse' | 'outplayer' | 'vidhub', {
+          fallbackPlayer: fallbackPlayer as 'outplayer' | 'infuse' | 'vidhub',
+          onError: (error) => {
             console.error('Failed to open external player:', error);
-            await tryFallbackPlayer();
-          }
-        };
-
-        await handleExternalPlayer();
+          },
+          title: video.title,
+          subtitle: video.subtitle,
+          poster: video.poster
+        });
+        
         return;
       }
 
       const streamUrl = video.streamUrl.toLowerCase();
       const config: PlayerConfig = {
-        type: 'vlc' as PlayerType,
+        type: 'web' as PlayerType,
         options: {
           autoplay: true,
           muted: false,

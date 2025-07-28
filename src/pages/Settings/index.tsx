@@ -322,13 +322,13 @@ const Settings = () => {
                 <FormLabel htmlFor="internal-player-select">Internal Player</FormLabel>
                 <Select
                   id="internal-player-select"
-                  defaultValue="vlc"
+                  defaultValue="web"
                   onChange={(e) => setPlayerConfig({
                     ...playerConfig,
-                    type: 'vlc' as PlayerType
+                    type: 'web' as PlayerType
                   })}
                 >
-                  <option value="vlc">VLC</option>
+                  <option value="web">Web Player</option>
                 </Select>
               </FormControl>
 
@@ -350,12 +350,13 @@ const Settings = () => {
                 <FormLabel htmlFor="fallback-player-select">Fallback Player</FormLabel>
                 <Select
                   id="fallback-player-select"
-                  defaultValue="vlc"
+                  defaultValue="outplayer"
                   isDisabled={!localStorage.getItem('enableExternalPlayers')}
                   onChange={(e) => localStorage.setItem('fallbackPlayer', e.target.value)}
                 >
-                  <option value="vlc">VLC</option>
                   <option value="outplayer">Outplayer</option>
+                  <option value="infuse">Infuse</option>
+                  <option value="vidhub">Vidhub</option>
                 </Select>
                 <Text fontSize="sm" color="gray.500">Used when primary player fails to open</Text>
               </FormControl>

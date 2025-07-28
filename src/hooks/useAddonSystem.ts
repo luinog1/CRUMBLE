@@ -27,27 +27,6 @@ export const useAddonSystem = create<AddonSystemState>()(
           baseUrl: 'https://torrentio.strem.fun',
           catalogs: []
         },
-        {
-          id: 'org.stremio.cinemeta',
-          version: '1.0.0',
-          name: 'Cinemeta',
-          description: 'The official Stremio addon for movies and series',
-          resources: ['catalog'],
-          types: ['movie', 'series'],
-          baseUrl: 'https://v3-cinemeta.strem.io',
-          catalogs: [
-            {
-              type: 'movie',
-              id: 'top',
-              name: 'Top Movies'
-            },
-            {
-              type: 'series',
-              id: 'top',
-              name: 'Top Series'
-            }
-          ]
-        },
         // Add a local fallback addon that always works
         {
           id: 'org.crumble.fallback',
@@ -208,12 +187,17 @@ export const useAddonSystem = create<AddonSystemState>()(
         // Log all available addons for debugging
         console.log('Available addons:', get().addons.map(a => ({ id: a.id, name: a.name, baseUrl: a.baseUrl })));
         
-        // Find an addon that has the requested catalog
-        const addon = get().addons.find(addon =>
-          addon.catalogs?.some(catalog =>
+        // Find an addon that has the requested catalog or matches virtual catalog ID
+        const addon = get().addons.find(addon => {
+          // Check if this is a virtual catalog for a stream provider
+          if (id.startsWith(addon.id + '-')) {
+            return addon.resources?.includes('stream');
+          }
+          // Otherwise check regular catalogs
+          return addon.catalogs?.some(catalog =>
             catalog.type === type && catalog.id === id
-          )
-        )
+          );
+        });
 
         if (!addon) {
           console.error(`No addon found for catalog type: ${type}, id: ${id}`);
@@ -221,16 +205,20 @@ export const useAddonSystem = create<AddonSystemState>()(
           return generateFallbackItems(type);
         }
 
-        const catalog = addon.catalogs?.find(c => c.type === type && c.id === id)
-        if (!catalog) {
-          console.error(`Catalog not found in addon ${addon.name} for type: ${type}, id: ${id}`);
-          return generateFallbackItems(type);
-        }
+        // For stream providers with virtual catalogs, skip catalog check
+        const isVirtualStreamCatalog = id.startsWith(addon.id + '-');
+        if (!isVirtualStreamCatalog) {
+          const catalog = addon.catalogs?.find(c => c.type === type && c.id === id)
+          if (!catalog) {
+            console.error(`Catalog not found in addon ${addon.name} for type: ${type}, id: ${id}`);
+            return generateFallbackItems(type);
+          }
 
-        // Check if addon supports catalog resource
-        if (!addon.resources.includes('catalog')) {
-          console.error(`Addon ${addon.name} does not support catalog resource`);
-          return generateFallbackItems(type);
+          // Check if addon supports catalog resource
+          if (!addon.resources.includes('catalog')) {
+            console.error(`Addon ${addon.name} does not support catalog resource`);
+            return generateFallbackItems(type);
+          }
         }
 
         // Special case for local fallback addon
@@ -249,12 +237,13 @@ export const useAddonSystem = create<AddonSystemState>()(
         // Build URL according to Stremio protocol
         let url = `${baseUrl}/catalog/${type}/${id}.json`
         
-        // Special case for Cinemeta
-        if (addon.id === 'org.stremio.cinemeta') {
-          url = `${baseUrl}/catalog/${type}/${id}/skip=0&limit=100.json`
-        } else if (extra && Object.keys(extra).length > 0) {
+        // Add query parameters
+        if (extra && Object.keys(extra).length > 0) {
           const queryParams = new URLSearchParams(extra)
           url += `?${queryParams.toString()}`
+        } else {
+          // Always include default parameters
+          url += '?skip=0&limit=100'
         }
 
         try {

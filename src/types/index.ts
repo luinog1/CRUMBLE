@@ -83,6 +83,7 @@ export interface Video {
   thumbnail?: string;
   poster?: string;
   streamUrl?: string;
+  subtitle?: string;
   type?: 'hls' | 'dash' | 'mp4';
   streams?: Stream[];
 }
@@ -94,7 +95,7 @@ export interface Link {
 }
 
 // Player Types
-export type PlayerType = 'hls.js' | 'dash.js' | 'webtorrent' | 'html5' | 'vlc';
+export type PlayerType = 'hls.js' | 'dash.js' | 'webtorrent' | 'html5' | 'web';
 export type QualityPreset = 'auto' | '1080p' | '720p' | '480p';
 
 export interface PlayerConfig {

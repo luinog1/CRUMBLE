@@ -29,76 +29,68 @@ const Home = () => {
   }, [fetchFeatured])
 
 
-  // Process catalogs using useMemo to avoid recreation on every render
+  // Process catalogs and ensure trending content
   const { movieCatalogs, seriesCatalogs } = useMemo(() => {
     const movieCatalogs: CatalogRequest[] = [];
     const seriesCatalogs: CatalogRequest[] = [];
     
-    try {
-      // Process regular catalogs
-      addons.forEach(addon => {
-        if (addon.catalogs) {
-          addon.catalogs.forEach(catalog => {
-            if (catalog.type === 'movie') {
-              movieCatalogs.push(catalog);
-            } else if (catalog.type === 'series') {
-              seriesCatalogs.push(catalog);
-            }
-          });
-        }
+    // Add trending catalogs only if TMDB API key is available
+    const tmdbApiKey = localStorage.getItem('tmdbApiKey');
+    if (tmdbApiKey) {
+      movieCatalogs.push({
+        id: 'trending',
+        name: 'Trending Movies',
+        type: 'movie',
+        isVirtual: true
       });
       
-      // Create virtual catalogs for stream scraper addons that don't have catalogs
-      const streamScraperAddons = addons.filter(addon => 
-        addon.resources && 
-        addon.resources.includes('stream') && 
-        (!addon.catalogs || addon.catalogs.length === 0) &&
-        addon.id !== 'cinemeta' // Skip Cinemeta as it's not a stream scraper
-      );
-      
-      streamScraperAddons.forEach(addon => {
-        // Create a virtual catalog for movies
-        movieCatalogs.push({
-          id: `${addon.id}-movies`,
-          name: `${addon.name || addon.id} Movies`,
-          type: 'movie',
-          extra: {
-            skip: '0',
-            search: ''
-          },
-          isVirtual: true,
-          addonId: addon.id
-        });
-        
-        // Create a virtual catalog for series
-        seriesCatalogs.push({
-          id: `${addon.id}-series`,
-          name: `${addon.name || addon.id} Series`,
-          type: 'series',
-          extra: {
-            skip: '0',
-            search: ''
-          },
-          isVirtual: true,
-          addonId: addon.id
-        });
+      seriesCatalogs.push({
+        id: 'trending',
+        name: 'Trending TV Shows',
+        type: 'series',
+        isVirtual: true
       });
-
-      // Log the current state for debugging
-      console.log('Addons:', addons.length, 'Movie catalogs:', movieCatalogs.length, 'Series catalogs:', seriesCatalogs.length);
-      console.log('Addon details:', addons.map(addon => ({
-        id: addon.id,
-        name: addon.name,
-        baseUrl: addon.baseUrl,
-        catalogs: addon.catalogs,
-        resources: addon.resources
-      })));
-      console.log('Movie catalogs details:', movieCatalogs);
-      console.log('Series catalogs details:', seriesCatalogs);
-    } catch (error) {
-      console.error('Error processing addons:', error);
-      // If there's an error processing addons, we'll rely on the fallback catalogs
     }
+    
+    // Process regular catalogs
+    addons.forEach(addon => {
+      if (addon.catalogs) {
+        addon.catalogs.forEach(catalog => {
+          if (catalog.type === 'movie') {
+            movieCatalogs.push(catalog);
+          } else if (catalog.type === 'series') {
+            seriesCatalogs.push(catalog);
+          }
+        });
+      }
+    });
+    
+    // Create virtual catalogs for stream scraper addons
+    const streamScraperAddons = addons.filter(addon => 
+      addon.resources && 
+      addon.resources.includes('stream') && 
+      (!addon.catalogs || addon.catalogs.length === 0)
+    );
+    
+    streamScraperAddons.forEach(addon => {
+      movieCatalogs.push({
+        id: `${addon.id}-movies`,
+        name: `${addon.name || addon.id} Movies`,
+        type: 'movie',
+        extra: { skip: '0', search: '' },
+        isVirtual: true,
+        addonId: addon.id
+      });
+      
+      seriesCatalogs.push({
+        id: `${addon.id}-series`,
+        name: `${addon.name || addon.id} Series`,
+        type: 'series',
+        extra: { skip: '0', search: '' },
+        isVirtual: true,
+        addonId: addon.id
+      });
+    });
 
     return { movieCatalogs, seriesCatalogs };
   }, [addons]);
@@ -114,44 +106,53 @@ const Home = () => {
         let items: CatalogItem[] = []
 
         if (catalog.isVirtual) {
-          const tmdbApiKey = localStorage.getItem('tmdbApiKey') || ''
-          if (!tmdbApiKey) {
-            throw new Error('TMDB API key is required for virtual catalogs')
-          }
-
-          const type = catalog.type === 'movie' ? 'movie' : 'tv'
-          const response = await fetch(
-            `https://api.themoviedb.org/3/trending/${type}/week`,
-            {
-              headers: {
-                'Authorization': `Bearer ${tmdbApiKey}`,
-                'Accept': 'application/json',
-                'Content-Type': 'application/json'
+            // Only require TMDB API key for trending catalogs
+            if (catalog.id === 'trending') {
+              const tmdbApiKey = localStorage.getItem('tmdbApiKey')
+              if (!tmdbApiKey) {
+                throw new Error('TMDB API key is required for trending catalogs')
               }
+            // Use TMDB API for trending content
+            const type = catalog.type === 'movie' ? 'movie' : 'tv'
+            const response = await fetch(
+              `https://api.themoviedb.org/3/trending/${type}/week?api_key=${tmdbApiKey}`,
+              {
+                headers: {
+                  'Accept': 'application/json',
+                  'Content-Type': 'application/json'
+                }
+              }
+            )
+
+            if (!response.ok) {
+              throw new Error(`TMDB API error: ${response.status}`)
             }
-          )
 
-          if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}))
-            throw new Error(`TMDB API error: ${response.status} - ${errorData.status_message || response.statusText}`)
+            const data = await response.json()
+            items = data.results.map((item: any) => ({
+              id: `tmdb-${catalog.type}:${item.id}`,
+              title: item.title || item.name,
+              poster: item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : '',
+              type: catalog.type,
+              year: item.release_date?.substring(0, 4) || item.first_air_date?.substring(0, 4),
+              rating: item.vote_average,
+              description: item.overview,
+              backdrop: item.backdrop_path ? `https://image.tmdb.org/t/p/original${item.backdrop_path}` : null
+            }))
+          } else {
+            // Handle other virtual catalogs (e.g., stream scrapers)
+            const results = await getCatalogItems(catalog.type, catalog.id)
+            items = results || []
           }
-
-          const data = await response.json()
-          items = data.results.map((item: any) => ({
-            id: `tmdb-${catalog.type}:${item.id}`,
-            title: item.title || item.name,
-            poster: item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : '',
-            type: catalog.type,
-            year: item.release_date?.substring(0, 4) || item.first_air_date?.substring(0, 4),
-            rating: item.vote_average ? item.vote_average / 2 : undefined
-          }))
         } else {
+          // Handle regular addon catalogs
           const results = await getCatalogItems(catalog.type, catalog.id)
           items = results || []
         }
 
         setCatalogItems(prev => ({ ...prev, [catalogKey]: items }))
       } catch (err) {
+        console.error(`Error fetching ${catalog.name}:`, err)
         setCatalogError(prev => ({
           ...prev,
           [catalogKey]: err instanceof Error ? err.message : 'Failed to fetch catalog items'
@@ -161,31 +162,11 @@ const Home = () => {
       }
     }
 
-    // Always fetch trending catalogs
-    const trendingMovie = {
-      type: 'movie' as const,
-      id: 'trending',
-      name: 'Trending Movies',
-      isVirtual: true
-    }
-    const trendingSeries = {
-      type: 'series' as const,
-      id: 'trending',
-      name: 'Trending TV Shows',
-      isVirtual: true
-    }
-    
-    // Fetch trending items first
-    fetchCatalogItems(trendingMovie)
-    fetchCatalogItems(trendingSeries)
-    
-    // Then fetch items for all other catalogs
+    // Fetch all catalogs in parallel
     const allCatalogs = [...movieCatalogs, ...seriesCatalogs]
-    allCatalogs.forEach(catalog => {
-      if (catalog.id !== 'trending') {
-        fetchCatalogItems(catalog)
-      }
-    })
+    Promise.all(allCatalogs.map(fetchCatalogItems))
+      .catch(error => console.error('Error fetching catalogs:', error))
+
   }, [movieCatalogs, seriesCatalogs, getCatalogItems])
 
   return (
