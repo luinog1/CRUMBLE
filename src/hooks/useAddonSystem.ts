@@ -26,28 +26,6 @@ export const useAddonSystem = create<AddonSystemState>()(
           types: ['movie', 'series'],
           baseUrl: 'https://torrentio.strem.fun',
           catalogs: []
-        },
-        // Add a local fallback addon that always works
-        {
-          id: 'org.crumble.fallback',
-          version: '1.0.0',
-          name: 'Crumble Fallback',
-          description: 'Local fallback addon for testing',
-          resources: ['catalog'],
-          types: ['movie', 'series'],
-          baseUrl: 'local',
-          catalogs: [
-            {
-              type: 'movie',
-              id: 'trending',
-              name: 'Trending Movies'
-            },
-            {
-              type: 'series',
-              id: 'trending',
-              name: 'Trending TV Shows'
-            }
-          ]
         }
       ],
       addAddon: async (url: string) => {
@@ -163,25 +141,10 @@ export const useAddonSystem = create<AddonSystemState>()(
       getCatalogItems: async (type: string, id: string, extra?: Record<string, string>) => {
         console.log(`Getting catalog items for type: ${type}, id: ${id}, extra:`, extra);
         
-        // If no addons are configured, use TMDB fallback for trending
-        if (get().addons.length === 0 && id === 'trending') {
-          console.log('No addons configured, using TMDB fallback for trending')
-          // Return mock data for demonstration
-          const mockItems = [];
-          
-          // Generate 10 sample items
-          for (let i = 1; i <= 10; i++) {
-            mockItems.push({
-              id: `tt${1000000 + i}`,
-              title: type === 'movie' ? `Sample Movie ${i}` : `Sample Series ${i}`,
-              poster: '/placeholder-poster.svg',
-              type: type === 'movie' ? 'movie' : 'series',
-              year: 2023 - (i % 5),
-              rating: 8.5 - (i % 5) * 0.3
-            });
-          }
-          
-          return mockItems as CatalogItem[]
+        // If no addons are configured, return empty array
+        if (get().addons.length === 0) {
+          console.log('No addons configured, returning empty array')
+          return []
         }
         
         // Log all available addons for debugging
@@ -202,7 +165,7 @@ export const useAddonSystem = create<AddonSystemState>()(
         if (!addon) {
           console.error(`No addon found for catalog type: ${type}, id: ${id}`);
           // Return fallback data instead of throwing an error
-          return generateFallbackItems(type);
+          return [];
         }
 
         // For stream providers with virtual catalogs, skip catalog check
@@ -211,27 +174,27 @@ export const useAddonSystem = create<AddonSystemState>()(
           const catalog = addon.catalogs?.find(c => c.type === type && c.id === id)
           if (!catalog) {
             console.error(`Catalog not found in addon ${addon.name} for type: ${type}, id: ${id}`);
-            return generateFallbackItems(type);
+            return [];
           }
 
           // Check if addon supports catalog resource
           if (!addon.resources.includes('catalog')) {
             console.error(`Addon ${addon.name} does not support catalog resource`);
-            return generateFallbackItems(type);
+            return [];
           }
         }
 
         // Special case for local fallback addon
         if (addon.id === 'org.crumble.fallback') {
           console.log(`Using local fallback addon for ${type}/${id}`);
-          return generateFallbackItems(type);
+          return [];
         }
         
         // Get base URL from addon (stored when adding the addon)
         const baseUrl = addon.baseUrl;
         if (!baseUrl) {
           console.error(`Addon ${addon.name} has no baseUrl`);
-          return generateFallbackItems(type);
+          return [];
         }
 
         // Build URL according to Stremio protocol
@@ -251,7 +214,7 @@ export const useAddonSystem = create<AddonSystemState>()(
           const response = await fetch(url)
           if (!response.ok) {
             console.error(`Failed to fetch catalog items: ${response.status} ${response.statusText}`)
-            return generateFallbackItems(type);
+            return [];
           }
           
           const data = await response.json()
@@ -262,7 +225,7 @@ export const useAddonSystem = create<AddonSystemState>()(
           
           if (!items.length) {
             console.warn(`No items returned from ${url}`)
-            return generateFallbackItems(type);
+            return [];
           }
           
           return items.map((item: { id: string; name?: string; title?: string; poster: string; type: string; year: number; imdbRating?: string }) => ({
@@ -275,52 +238,10 @@ export const useAddonSystem = create<AddonSystemState>()(
           })) as CatalogItem[]
         } catch (error) {
           console.error('Error fetching catalog items:', error)
-          return generateFallbackItems(type);
+          return [];
         }
         
-        // Helper function to generate fallback items
-        function generateFallbackItems(itemType: string): CatalogItem[] {
-          const movieTitles = [
-            'The Adventure Begins',
-            'Lost in Time',
-            'Shadows of the Past',
-            'Beyond the Horizon',
-            'Eternal Echoes',
-            'Whispers in the Dark',
-            'The Last Journey',
-            'Forgotten Dreams',
-            'Secrets of the Universe',
-            'The Final Chapter'
-          ];
-          
-          const seriesTitles = [
-            'Dark Mysteries',
-            'The Chronicles',
-            'New Beginnings',
-            'Endless Nights',
-            'City Lights',
-            'The Hidden Truth',
-            'Beyond Reality',
-            'Parallel Lives',
-            'The Awakening',
-            'Legends of Tomorrow'
-          ];
-          
-          const items = [];
-          const titles = itemType === 'movie' ? movieTitles : seriesTitles;
-          
-          for (let i = 0; i < titles.length; i++) {
-            items.push({
-              id: `fallback-${itemType}-${i + 1}`,
-              title: titles[i],
-              poster: '/placeholder-poster.svg',
-              type: (itemType === 'movie' ? 'movie' : 'series') as 'movie' | 'series',
-              year: 2023 - (i % 5),
-              rating: 8.5 - ((i % 5) * 0.3)
-            });
-          }
-          return items;
-        }
+
       }
     }),
     {

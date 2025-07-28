@@ -206,36 +206,26 @@ const Home = () => {
         )}
 
         {/* Movie Catalogs Section */}
-        {movieCatalogs.length === 0 ? (
+        {movieCatalogs.map((catalog) => (
           <CatalogCarousel
-            title="Movies"
-            items={catalogItems[`movie-trending`] || []}
+            key={`${catalog.type}-${catalog.id}`}
+            title={catalog.name}
+            items={catalogItems[`${catalog.type}-${catalog.id}`] || []}
+            loading={catalogLoading[`${catalog.type}-${catalog.id}`]}
+            error={catalogError[`${catalog.type}-${catalog.id}`]}
           />
-        ) : (
-          movieCatalogs.map((catalog) => (
-            <CatalogCarousel
-              key={`${catalog.type}-${catalog.id}`}
-              title={catalog.name}
-              items={catalogItems[`${catalog.type}-${catalog.id}`] || []}
-            />
-          ))
-        )}
+        ))}
 
         {/* Series Catalogs Section */}
-        {seriesCatalogs.length === 0 ? (
+        {seriesCatalogs.map((catalog) => (
           <CatalogCarousel
-            title="TV Shows"
-            items={catalogItems[`series-trending`] || []}
+            key={`${catalog.type}-${catalog.id}`}
+            title={catalog.name}
+            items={catalogItems[`${catalog.type}-${catalog.id}`] || []}
+            loading={catalogLoading[`${catalog.type}-${catalog.id}`]}
+            error={catalogError[`${catalog.type}-${catalog.id}`]}
           />
-        ) : (
-          seriesCatalogs.map((catalog) => (
-            <CatalogCarousel
-              key={`${catalog.type}-${catalog.id}`}
-              title={catalog.name}
-              items={catalogItems[`${catalog.type}-${catalog.id}`] || []}
-            />
-          ))
-        )}
+        ))}
       </VStack>
     </MotionBox>
   )

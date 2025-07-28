@@ -1,4 +1,4 @@
-import { Box, Heading, IconButton, useBreakpointValue } from '@chakra-ui/react'
+import { Box, Heading, IconButton, Text, useBreakpointValue } from '@chakra-ui/react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronLeftIcon, ChevronRightIcon } from '@chakra-ui/icons'
 import { useState, useRef } from 'react'
@@ -10,9 +10,11 @@ const MotionBox = motion(Box)
 interface CatalogCarouselProps {
   title: string
   items: CatalogItem[]
+  loading?: boolean
+  error?: string
 }
 
-const CatalogCarousel = ({ title, items }: CatalogCarouselProps) => {
+const CatalogCarousel = ({ title, items, loading = false, error }: CatalogCarouselProps) => {
   const [scrollPosition, setScrollPosition] = useState(0)
   const carouselRef = useRef<HTMLDivElement>(null)
   
@@ -29,9 +31,19 @@ const CatalogCarousel = ({ title, items }: CatalogCarouselProps) => {
 
   return (
     <Box position="relative" mb={8}>
-      <Heading size="lg" mb={4}>{title}</Heading>
-      
-      <Box position="relative" overflow="hidden">
+      {!loading && !error && items.length > 0 && (
+        <Heading size="lg" mb={4}>{title}</Heading>
+      )}
+      {loading ? (
+        <Box height="300px" display="flex" alignItems="center" justifyContent="center">
+          <Text>Loading...</Text>
+        </Box>
+      ) : error ? (
+        <Box height="300px" display="flex" alignItems="center" justifyContent="center">
+          <Text color="red.400">{error}</Text>
+        </Box>
+      ) : items.length > 0 ? (
+        <Box position="relative" overflow="hidden">
         <IconButton
           aria-label="Scroll left"
           icon={<ChevronLeftIcon />}
@@ -97,21 +109,26 @@ const CatalogCarousel = ({ title, items }: CatalogCarouselProps) => {
         </Box>
         
         <IconButton
-          aria-label="Scroll right"
-          icon={<ChevronRightIcon />}
-          position="absolute"
-          right={0}
-          top="50%"
-          transform="translateY(-50%)"
-          zIndex={2}
-          onClick={() => scroll('right')}
-          display={scrollPosition >= (items.length - itemsPerView) * Number(itemWidth.replace('px', '')) ? 'none' : 'flex'}
-          variant="ghost"
-          colorScheme="whiteAlpha"
-          size="lg"
-          _hover={{ bg: 'whiteAlpha.200' }}
-        />
-      </Box>
+            aria-label="Scroll right"
+            icon={<ChevronRightIcon />}
+            position="absolute"
+            right={0}
+            top="50%"
+            transform="translateY(-50%)"
+            zIndex={2}
+            onClick={() => scroll('right')}
+            display={scrollPosition >= (items.length - itemsPerView) * Number(itemWidth.replace('px', '')) ? 'none' : 'flex'}
+            variant="ghost"
+            colorScheme="whiteAlpha"
+            size="lg"
+            _hover={{ bg: 'whiteAlpha.200' }}
+          />
+        </Box>
+      ) : (
+        <Box height="300px" display="flex" alignItems="center" justifyContent="center">
+          <Text color="gray.500">No items available</Text>
+        </Box>
+      )}
     </Box>
   )
 }
