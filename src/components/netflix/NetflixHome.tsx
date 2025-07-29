@@ -17,6 +17,8 @@ import {
 import { useNetflixApi, useNetflixGenreCatalogs } from '../../hooks/useNetflixApi'
 import { TMDBMovie } from '../../services/NetflixApiClient'
 import { useNavigate } from 'react-router-dom'
+import { Carousel } from 'react-responsive-carousel'
+import 'react-responsive-carousel/lib/styles/carousel.min.css'
 
 // Netflix Clone Home Component
 // Implements the same UI structure as the original Netflix clone
@@ -244,23 +246,32 @@ const NetflixHome: React.FC = () => {
         await Promise.all([
           fetchTrendingMovies(),
           fetchPopularMovies(),
-          fetchTopRatedTV()
-        ])
-        
-        // Fetch movies for first few genres
-        if (genres.length > 0) {
-          const genrePromises = genres.slice(0, 8).map(genre => 
-            fetchMoviesByGenre(genre.id)
-          )
-          await Promise.all(genrePromises)
-        }
+          fetchTopRatedTV(),
+        ]);
       } catch (err) {
-        console.error('Failed to load initial data:', err)
+        console.error('Failed to load initial data:', err);
       }
-    }
+    };
 
-    loadInitialData()
-  }, [genres, fetchTrendingMovies, fetchPopularMovies, fetchTopRatedTV, fetchMoviesByGenre])
+    loadInitialData();
+  }, [fetchTrendingMovies, fetchPopularMovies, fetchTopRatedTV]);
+
+  useEffect(() => {
+    const fetchGenreMovies = async () => {
+      if (genres.length > 0) {
+        try {
+          const genrePromises = genres.slice(0, 8).map(genre =>
+            fetchMoviesByGenre(genre.id)
+          );
+          await Promise.all(genrePromises);
+        } catch (err) {
+          console.error('Failed to load genre movies:', err);
+        }
+      }
+    };
+
+    fetchGenreMovies();
+  }, [genres, fetchMoviesByGenre]);
 
   // Set featured movie from trending movies
   useEffect(() => {
@@ -337,7 +348,7 @@ const NetflixHome: React.FC = () => {
           <Heading 
             size="4xl" 
             color="green.400"
-            fontFamily="'Orbitron', 'Arial Black', 'Helvetica Bold', sans-serif"
+            fontFamily="'VT323', monospace"
             fontWeight="900"
             letterSpacing="wider"
             textTransform="uppercase"
@@ -359,13 +370,27 @@ const NetflixHome: React.FC = () => {
         )}
 
         {/* Featured Movie */}
-        {tmdbMetadataEnabled && featuredMovie && (
-          <FeaturedMovie
-            movie={featuredMovie}
-            onWatchClick={() => handleMovieClick(featuredMovie)}
-            onFindStreamsClick={() => handleFindStreams(featuredMovie)}
-            showMetadata={tmdbMetadataEnabled}
-          />
+        {tmdbMetadataEnabled && trendingMovies.length > 0 && (
+          <Box position="relative">
+            <Carousel 
+              showThumbs={false} 
+              showStatus={false} 
+              infiniteLoop 
+              autoPlay 
+              interval={5000}
+              showArrows={false}
+            >
+              {trendingMovies.map(movie => (
+                <FeaturedMovie
+                  key={movie.id}
+                  movie={movie}
+                  onWatchClick={() => handleMovieClick(movie)}
+                  onFindStreamsClick={() => handleFindStreams(movie)}
+                  showMetadata={true}
+                />
+              ))}
+            </Carousel>
+          </Box>
         )}
 
         {/* Movie Rows - Netflix Clone Style */}
