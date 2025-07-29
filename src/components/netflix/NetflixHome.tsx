@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react'
+import useLocalStorage from '../../hooks/useLocalStorage'
 import {
   Box,
   VStack,
@@ -214,6 +215,8 @@ const FeaturedMovie: React.FC<FeaturedMovieProps> = ({ movie, onWatchClick, onFi
 const NetflixHome: React.FC = () => {
   const navigate = useNavigate()
   const toast = useToast()
+
+  const [tmdbMetadataEnabled] = useLocalStorage('tmdbMetadataEnabled', true)
   
   const {
     loading,
@@ -334,7 +337,7 @@ const NetflixHome: React.FC = () => {
           <Heading 
             size="4xl" 
             color="green.400"
-            fontFamily="'Arial Black', 'Helvetica Bold', sans-serif"
+            fontFamily="'Orbitron', 'Arial Black', 'Helvetica Bold', sans-serif"
             fontWeight="900"
             letterSpacing="wider"
             textTransform="uppercase"
@@ -356,51 +359,59 @@ const NetflixHome: React.FC = () => {
         )}
 
         {/* Featured Movie */}
-        {featuredMovie && (
+        {tmdbMetadataEnabled && featuredMovie && (
           <FeaturedMovie
             movie={featuredMovie}
             onWatchClick={() => handleMovieClick(featuredMovie)}
             onFindStreamsClick={() => handleFindStreams(featuredMovie)}
+            showMetadata={tmdbMetadataEnabled}
           />
         )}
 
         {/* Movie Rows - Netflix Clone Style */}
-        
-        {/* Trending Movies */}
-        <MovieRow
-          title="Trending Movies"
-          movies={trendingMovies}
-          onMovieClick={handleMovieClick}
-        />
-        
-        {/* Popular Movies */}
-        <MovieRow
-          title="Popular Movies"
-          movies={popularMovies}
-          onMovieClick={handleMovieClick}
-        />
-        
-        {/* Top Rated TV Shows */}
-        <MovieRow
-          title="Top Rated TV Shows"
-          movies={topRatedTV}
-          onMovieClick={handleMovieClick}
-        />
-
-        {/* Genre-based Catalogs (Netflix Clone Protocol) */}
-        {genres.map((genre) => {
-          const genreMovies = moviesByGenre[genre.id]
-          if (!genreMovies || genreMovies.length === 0) return null
-          
-          return (
+        {tmdbMetadataEnabled && (
+          <>
+            {/* Trending Movies */}
             <MovieRow
-              key={genre.id}
-              title={`${genre.name} Movies`}
-              movies={genreMovies}
+              title="Trending Movies"
+              movies={trendingMovies}
               onMovieClick={handleMovieClick}
+              showMetadata={tmdbMetadataEnabled}
             />
-          )
-        })}
+            
+            {/* Popular Movies */}
+            <MovieRow
+              title="Popular Movies"
+              movies={popularMovies}
+              onMovieClick={handleMovieClick}
+              showMetadata={tmdbMetadataEnabled}
+            />
+            
+            {/* Top Rated TV Shows */}
+            <MovieRow
+              title="Top Rated TV Shows"
+              movies={topRatedTV}
+              onMovieClick={handleMovieClick}
+              showMetadata={tmdbMetadataEnabled}
+            />
+
+            {/* Genre-based Catalogs (Netflix Clone Protocol) */}
+            {genres.map((genre) => {
+              const genreMovies = moviesByGenre[genre.id]
+              if (!genreMovies || genreMovies.length === 0) return null
+              
+              return (
+                <MovieRow
+                  key={genre.id}
+                  title={`${genre.name} Movies`}
+                  movies={genreMovies}
+                  onMovieClick={handleMovieClick}
+                  showMetadata={tmdbMetadataEnabled}
+                />
+              )
+            })}
+          </>
+        )}
 
         {/* Loading indicator for additional content */}
         {loading && (

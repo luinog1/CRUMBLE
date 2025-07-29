@@ -21,6 +21,7 @@ import {
 } from '@chakra-ui/react'
 import { FiTrash2, FiPlus } from 'react-icons/fi'
 import { useState } from 'react'
+import useLocalStorage from '@hooks/useLocalStorage'
 import { useAddons } from '@hooks/useAddons'
 import { usePlayer } from '@hooks/usePlayer'
 import { useTMDB } from '@hooks/useTMDB'
@@ -35,6 +36,7 @@ const Settings = () => {
   const { addons, addAddon, removeAddon } = useAddons()
   const { playerConfig, setPlayerConfig } = usePlayer()
   const { setApiKey, setLanguage, setIncludeAdult, apiKey } = useTMDB()
+  const [tmdbMetadataEnabled, setTmdbMetadataEnabled] = useLocalStorage('tmdbMetadataEnabled', true)
   const { 
     realDebridApiKey,
     allDebridApiKey,
@@ -164,10 +166,8 @@ const Settings = () => {
                 <Switch 
                   id="tmdb-metadata-toggle" 
                   colorScheme="green"
-                  defaultChecked={true}
-                  onChange={(e) => {
-                    localStorage.setItem('tmdbMetadataEnabled', e.target.checked.toString())
-                  }}
+                  isChecked={tmdbMetadataEnabled}
+                  onChange={(e) => setTmdbMetadataEnabled(e.target.checked)}
                 />
               </FormControl>
 
