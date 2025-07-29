@@ -80,7 +80,7 @@ const Settings = () => {
   }, [apiKey])
 
   return (
-    <Box p={8}>
+    <Box p={8} ml="80px">
       <VStack spacing={8} align="stretch" maxW="3xl" mx="auto">
         <Heading size="xl">Settings</Heading>
 
@@ -157,6 +157,18 @@ const Settings = () => {
                     Save
                   </Button>
                 </HStack>
+              </FormControl>
+
+              <FormControl display="flex" alignItems="center">
+                <FormLabel htmlFor="tmdb-metadata-toggle" mb={0}>Enable TMDB Metadata</FormLabel>
+                <Switch 
+                  id="tmdb-metadata-toggle" 
+                  colorScheme="green"
+                  defaultChecked={true}
+                  onChange={(e) => {
+                    localStorage.setItem('tmdbMetadataEnabled', e.target.checked.toString())
+                  }}
+                />
               </FormControl>
 
               <FormControl>

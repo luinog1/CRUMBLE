@@ -11,10 +11,7 @@ import {
   Spinner,
   Alert,
   AlertIcon,
-  useToast,
-  Switch,
-  FormControl,
-  FormLabel
+  useToast
 } from '@chakra-ui/react'
 import { useNetflixApi, useNetflixGenreCatalogs } from '../../hooks/useNetflixApi'
 import { TMDBMovie } from '../../services/NetflixApiClient'
@@ -236,7 +233,6 @@ const NetflixHome: React.FC = () => {
   
   const { catalogs } = useNetflixGenreCatalogs()
   const [featuredMovie, setFeaturedMovie] = useState<TMDBMovie | null>(null)
-  const [tmdbMetadataEnabled, setTmdbMetadataEnabled] = useState(true)
 
   // Fetch initial data (Netflix Clone behavior)
   useEffect(() => {
@@ -331,30 +327,22 @@ const NetflixHome: React.FC = () => {
   }
 
   return (
-    <Box bg="black" minH="100vh" p={6}>
-      <VStack spacing={6} align="stretch">
+    <Box bg="black" minH="100vh" p={4} ml="80px">
+      <VStack spacing={4} align="stretch">
         {/* Header */}
-        <HStack justify="space-between" align="center">
-          <Heading size="xl" color="green.400">
+        <Box textAlign="center" py={6}>
+          <Heading 
+            size="4xl" 
+            color="green.400"
+            fontFamily="'Arial Black', 'Helvetica Bold', sans-serif"
+            fontWeight="900"
+            letterSpacing="wider"
+            textTransform="uppercase"
+            textShadow="0 0 20px rgba(72, 187, 120, 0.5)"
+          >
             CRUMBLE
           </Heading>
-          <HStack spacing={6}>
-            <FormControl display="flex" alignItems="center">
-              <FormLabel htmlFor="tmdb-toggle" mb="0" color="white" fontSize="sm">
-                TMDB Metadata
-              </FormLabel>
-              <Switch
-                id="tmdb-toggle"
-                colorScheme="green"
-                isChecked={tmdbMetadataEnabled}
-                onChange={(e) => setTmdbMetadataEnabled(e.target.checked)}
-              />
-            </FormControl>
-            <Text color="white" fontSize="sm">
-              Netflix Clone Protocol Active
-            </Text>
-          </HStack>
-        </HStack>
+        </Box>
 
         {/* Error Display */}
         {error && (
@@ -373,7 +361,6 @@ const NetflixHome: React.FC = () => {
             movie={featuredMovie}
             onWatchClick={() => handleMovieClick(featuredMovie)}
             onFindStreamsClick={() => handleFindStreams(featuredMovie)}
-            showMetadata={tmdbMetadataEnabled}
           />
         )}
 
@@ -384,7 +371,6 @@ const NetflixHome: React.FC = () => {
           title="Trending Movies"
           movies={trendingMovies}
           onMovieClick={handleMovieClick}
-          showMetadata={tmdbMetadataEnabled}
         />
         
         {/* Popular Movies */}
@@ -392,7 +378,6 @@ const NetflixHome: React.FC = () => {
           title="Popular Movies"
           movies={popularMovies}
           onMovieClick={handleMovieClick}
-          showMetadata={tmdbMetadataEnabled}
         />
         
         {/* Top Rated TV Shows */}
@@ -400,7 +385,6 @@ const NetflixHome: React.FC = () => {
           title="Top Rated TV Shows"
           movies={topRatedTV}
           onMovieClick={handleMovieClick}
-          showMetadata={tmdbMetadataEnabled}
         />
 
         {/* Genre-based Catalogs (Netflix Clone Protocol) */}
@@ -414,7 +398,6 @@ const NetflixHome: React.FC = () => {
               title={`${genre.name} Movies`}
               movies={genreMovies}
               onMovieClick={handleMovieClick}
-              showMetadata={tmdbMetadataEnabled}
             />
           )
         })}

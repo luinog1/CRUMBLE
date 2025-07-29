@@ -22,7 +22,7 @@ import { useAddonSystem } from '@hooks/useAddonSystem'
 import { usePlayer } from '@hooks/usePlayer'
 import { useLibrary } from '@hooks/useLibrary'
 import { useTMDB } from '@hooks/useTMDB'
-import { ApiClient } from '@/services/ApiClient'
+import { apiClient } from '@/services/ApiClient'
 
 interface Stream {
   url: string
@@ -624,7 +624,7 @@ const DetailsPage = () => {
   }
 
   return (
-    <Box>
+    <Box ml="80px">
       {/* Hero Section with Backdrop */}
       <Box
         position="relative"

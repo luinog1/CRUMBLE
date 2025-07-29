@@ -102,7 +102,7 @@ const Search = () => {
   const seriesResults = results.filter(item => item.type === 'series')
 
   return (
-    <Box p={8}>
+    <Box p={8} ml="80px">
       <VStack spacing={8} align="stretch" maxW="6xl" mx="auto">
         <InputGroup size="lg">
           <InputLeftElement pointerEvents="none">
